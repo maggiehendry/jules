@@ -391,3 +391,40 @@ class vn82_t115(MacroUpgrade):
                 )
 
         return config, self.reports
+
+
+class vn82_t115_example(MacroUpgrade):
+    """Upgrade macro from JULES by Maggie Hendry"""
+
+    BEFORE_TAG = "vn8.2_t115"
+    AFTER_TAG = "vn8.2_t115_example"
+
+    def upgrade(self, config, meta_config=None):
+        """Upgrade a JULES runtime app configuration."""
+
+        RMDI = str(-(2**30))
+        for obj in config.get_value():
+            if re.search(r'namelist:jules_pftparm', obj):
+                pft_name_io = self.get_setting_value(config,[obj,"pft_name_io"])
+                if pft_name_io in ["'brd_leaf'", "'ndl_leaf'", "'ndl_leaf_eg'"]:
+                    a_wl_io = "0.65"
+                elif pft_name_io in ["'brd_leaf_dec'", "'brd_leaf_eg_temp'"]:
+                    a_wl_io = "0.78"
+                elif pft_name_io in ["'brd_leaf_eg_trop'"]:
+                    a_wl_io = "0.845"
+                elif "c3" in pft_name_io or "c4" in pft_name_io:
+                    a_wl_io = "0.005"
+                elif pft_name_io in ["'ndl_leaf_dec'"]:
+                    a_wl_io = "0.8"
+                elif pft_name_io in ["'shrub'"]:
+                    a_wl_io = "0.10"
+                elif pft_name_io in ["'shrub_dec'", "'shrub_eg'"]:
+                    a_wl_io = "0.13"
+                else:
+                    a_wl_io = RMDI
+                    msg = f"{pft_name_io} not found, a_wl_io set to RMDI."
+                    self.add_report(info=msg, is_warning=True)
+                self.change_setting_value(config,[obj,"a_wl_io"],a_wl_io)
+
+        return config, self.reports
+

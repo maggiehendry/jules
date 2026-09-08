@@ -69,11 +69,10 @@ rose-meta/jules-fcm-make/HEAD/rose-meta.conf			@MetOffice/ssdteam
 # Snow & Surface Modules
 **/science/snow/			@JMEdwardsXtr
 **/science/surface/			@JMEdwardsXtr
-rose-meta/jules-shared/jules-snow/	@JMEdwardsXtr
-rose-meta/jules-shared/jules-surface/	@JMEdwardsXtr
+rose-meta/jules-shared/jules-snow/	@JMEdwardsXtr @maggiehendry
+rose-meta/jules-shared/jules-surface/	@JMEdwardsXtr @maggiehendry
 
 # Vegetation & RED Demography Module (Veg3)
-**/control/shared/next_gen_biogeochem_mod.F90		@mo-arthurargles
 **/control/shared/veg3_field_mod.F90			@mo-arthurargles
 **/science/params/veg3_param_mod.F90			@mo-arthurargles
 **/science/vegetation/veg3_*_mod.F90			@mo-arthurargles
@@ -82,35 +81,30 @@ rose-meta/jules-shared/jules-surface/	@JMEdwardsXtr
 doc/source/namelists/red_parms.nml.rst			@mo-arthurargles
 
 # Biogeochemistry Module
-**/control/shared/jules_soil_biogeochem_mod.F90				@eleanorgb
-**/control/shared/next_gen_biogeochem_mod.F90				@eleanorgb
-**/control/shared/soil_biogeochem_control_mod.F90			@eleanorgb
+**/soil_biogeochem							@eleanorgb
+**/control/shared/*soil_biogeochem*_mod.F90				@eleanorgb
+**/control/shared/jules_plant_n_uptake_mod.F90				@eleanorgb
+**/control/shared/jules_soil_ecosse_mod.F90				@eleanorgb
+**/control/shared/next_gen_biogeochem_mod.F90				@eleanorgb @mo-arthurargles
+**/initialisation/standalone/init_plant_n_uptake_mod.F90		@eleanorgb
 **/initialisation/standalone/init_soil_biogeochem_mod.F90		@eleanorgb
-**/science/soil_biogeochem						@eleanorgb
+**/initialisation/standalone/init_soil_ecosse_mod.F90			@eleanorgb
+**/initialisation/standalone/initial_conditions/ecosse_init_mod.F90 	@eleanorgb
+**/science/soil/ch4_microbe_mod.F90					@eleanorgb
+**/science/surface/microbe_jls.F90					@eleanorgb
+**/science/vegetation/triffid_jls.F90					@eleanorgb
+**/science/vegetation/decay_jls.F90					@eleanorgb
+**/science/vegetation/dpm_rpm_jls.F90					@eleanorgb
+**/science/vegetation/soilcarb*						@eleanorgb
 doc/source/namelists/jules_soil_biogeochem.nml.rst			@eleanorgb
-control/shared/jules_plant_n_uptake_mod.F90				@eleanorgb
-control/shared/jules_soil_ecosse_mod.F90				@eleanorgb
-initialisation/standalone/init_soil_ecosse_mod.F90			@eleanorgb
-initialisation/standalone/init_plant_n_uptake_mod.F90			@eleanorgb
-initialisation/standalone/initial_conditions/ecosse_init_mod.F90 	@eleanorgb
-science/soil/ch4_microbe_mod.F90					@eleanorgb
-science/surface/microbe_jls.F90						@eleanorgb
-science/vegetation/triffid_jls.F90					@eleanorgb
-science/vegetation/decay_jls.F90					@eleanorgb
-science/vegetation/soilcarb_mix_jls_mod.F90				@eleanorgb
-science/vegetation/dpm_rpm_jls.F90					@eleanorgb
-science/vegetation/soilcarb_tracer_jls_mod.F90				@eleanorgb
-science/vegetation/soilcarb_layers_jls_mod.F90				@eleanorgb
-science/vegetation/soilcarb_jls.F90					@eleanorgb
-science/params/ecosse_param_mod.F90					@eleanorgb
 
 # IMOGEN
+**/imogen								@eleanorgb
 control/standalone/update/update_precip_variables_mod.F90		@eleanorgb
 control/standalone/update/fill_disaggregated_precip_arrays_mod.F90	@eleanorgb
 control/standalone/update/impose_diurnal_cycle_mod.F90			@eleanorgb
-control/imogen								@eleanorgb
 initialisation/standalone/init_imogen.F90				@eleanorgb
-params/imogen								@eleanorgb
+doc/source/namelists/imogen.nml.rst					@eleanorgb
 
 
 

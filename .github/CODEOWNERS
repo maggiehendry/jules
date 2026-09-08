@@ -36,45 +36,52 @@
 # Code Owners
 ###############################################################################
 
-/**                               @GiorgiaLine
-rose-meta/**/version*.py            @james-bruten-mo
-rose-meta/jules-shared/**/HEAD/rose-meta.conf    @maggiehendry
-rose-meta/jules-standalone/HEAD/rose-meta.conf    @maggiehendry
-rose-meta/jules-um/HEAD/rose-meta.conf    @maggiehendry
-rose-meta/jules-lfric/HEAD/rose-meta.conf    @maggiehendry
-rose-stem/                        @james-bruten-mo
-etc/                              @MetOffice/ssdteam
-**/science/river_routing/            @maggiehendry
-**/initialisation/rivers-standalone/ @maggiehendry
-**/control/rivers-standalone/       @maggiehendry
-**/control/shared/jules_rivers_mod.F90      @maggiehendry
-**/io/rivers-standalone/     @maggiehendry
-**/control/shared/surf_couple_rivers_mod.F90        @maggiehendry
-**/initialisation/standalone/ancillaries/init_ancillaries_coupling_mod.F90      @maggiehendry
-**/initialisation/standalone/ancillaries/init_rivers_process_data_mod.F90       @maggiehendry
-**/initialisation/standalone/ancillaries/init_rivers_props_mod.F90      @maggiehendry
-**/initialisation/standalone/ancillaries/jules_rivers_props_mod.F90     @maggiehendry
-**/initialisation/standalone/grid/init_river_out_grid_mod.F90           @maggiehendry
-**/initialisation/standalone/init_rivers.F90        @maggiehendry
-**/control/shared/jules_water_resources_mod.F90     @maggiehendry
-**/control/shared/overbank_inundation_mod.F90       @maggiehendry
-**/io/dump/get_dim_info_mod.F90     @maggiehendry
-**/science/flake/							@HelenRJohnson
-**/control/shared/lake_mod.F90						@HelenRJohnson
-**/initialisation/standalone/initial_conditions/flake_init_mod.F90	@HelenRJohnson
-**/initialisation/standalone/ancillaries/init_flake_ancils_mod.F90	@HelenRJohnson
+# Global fallback
+*                                                           @GiorgiaLine
+
+# Core Infrastructure & Tooling
+rose-meta/**/version*.py            			    @james-bruten-mo
+rose-stem/                        			    @james-bruten-mo
+etc/                              			    @MetOffice/ssdteam
+
+# Rose Metadata Configuration
+rose-meta/jules-shared/**/HEAD/rose-meta.conf			@maggiehendry
+rose-meta/**/HEAD/rose-meta.conf    				@maggiehendry
+rose-meta/jules-fcm-make/HEAD/rose-meta.conf			@MetOffice/ssdteam
+
+# Rivers Module
+**/science/river_routing/					@maggiehendry
+**/rivers-standalone/						@maggiehendry
+**/control/shared/*_rivers*_mod.F90  				@maggiehendry
+**/control/shared/jules_water_resources_mod.F90     		@maggiehendry
+**/control/shared/overbank_inundation_mod.F90       		@maggiehendry
+**/io/dump/get_dim_info_mod.F90					@maggiehendry
+**/initialisation/standalone/init_rivers.F90			@maggiehendry
+**/initialisation/standalone/grid/init_river_out_grid_mod.F90           	@maggiehendry
+**/initialisation/standalone/ancillaries/init_ancillaries_coupling_mod.F90	@maggiehendry
+**/initialisation/standalone/ancillaries/*river*_mod.F90       			@maggiehendry
+
+# Lakes Module
+**/science/flake/						@HelenRJohnson
+**/control/shared/lake_mod.F90					@HelenRJohnson
+**/initialisation/standalone/*flake*_mod.F90                	@HelenRJohnson
+
+# Snow & Surface Modules
 **/science/snow/			@JMEdwardsXtr
 **/science/surface/			@JMEdwardsXtr
 rose-meta/jules-shared/jules-snow/	@JMEdwardsXtr
 rose-meta/jules-shared/jules-surface/	@JMEdwardsXtr
+
+# Vegetation & RED Demography Module (Veg3)
 **/control/shared/next_gen_biogeochem_mod.F90		@mo-arthurargles
 **/control/shared/veg3_field_mod.F90			@mo-arthurargles
+**/science/params/veg3_param_mod.F90			@mo-arthurargles
+**/science/vegetation/veg3_*_mod.F90			@mo-arthurargles
 **/initialisation/standalone/params/init_red_mod.F90	@mo-arthurargles
 **/science/params/red_io_mod.F90			@mo-arthurargles
-**/science/params/veg3_param_mod.F90			@mo-arthurargles
-**/science/vegetation/veg3_litter_mod.F90		@mo-arthurargles
-**/science/vegetation/veg3_red_dynamic_mod.F90		@mo-arthurargles
 doc/source/namelists/red_parms.nml.rst			@mo-arthurargles
+
+# Biogeochemistry Module
 **/control/shared/jules_soil_biogeochem_mod.F90			@eleanorgb
 **/control/shared/next_gen_biogeochem_mod.F90			@eleanorgb
 **/control/shared/soil_biogeochem_control_mod.F90		@eleanorgb

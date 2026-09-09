@@ -147,3 +147,7 @@ rose-meta/jules-shared/jules-deposition-species-specific		@GarryHayman @maggiehe
 **/control/shared/fire_vars_mod.F90		  @chantelleburton
 **/initialisation/standalone/init_fire_mod.F90	  @chantelleburton
 doc/source/namelists/fire.nml.rst		  @chantelleburton
+
+# CABLE
+**/cable			@ccarouge
+doc/source/namelists/cable_*	@ccarouge

@@ -72,7 +72,22 @@ rose-meta/jules-fcm-make/HEAD/rose-meta.conf			@MetOffice/ssdteam
 rose-meta/jules-shared/jules-snow/	@JMEdwardsXtr @maggiehendry
 rose-meta/jules-shared/jules-surface/	@JMEdwardsXtr @maggiehendry
 
-# Vegetation & RED Demography Module (Veg3)
+# Vegetation Module
+**/vegetation								@beckyoliver
+**/control/shared/jules_vegetation_mod.F90				@beckyoliver
+**/control/shared/veg_control.F90					@beckyoliver
+**/initialisation/standalone/ancillaries/init_vegetation_props_mod.F90	@beckyoliver
+**/initialisation/standalone/init_vegetation.F90			@beckyoliver
+**/initialisation/standalone/params/init_pftparm.inc			@beckyoliver
+**/science/params/pftparm_io_mod.F90					@beckyoliver
+**/science/params/pftparm_mod.F90					@beckyoliver
+**/science/params/veg_param_mod.F90					@beckyoliver
+doc/source/namelists/jules_vegetation.nml.rst				@beckyoliver
+doc/source/namelists/pft_params.nml.rst					@beckyoliver
+rose-meta/jules-shared/jules-vegetation					@beckyoliver @maggiehendry
+rose-meta/jules-shared/jules-pftparm					@beckyoliver @maggiehendry
+
+# RED Demography Module (Veg3)
 **/control/shared/veg3_field_mod.F90			@mo-arthurargles
 **/science/params/veg3_param_mod.F90			@mo-arthurargles
 **/science/vegetation/veg3_*_mod.F90			@mo-arthurargles
@@ -106,5 +121,29 @@ control/standalone/update/impose_diurnal_cycle_mod.F90			@eleanorgb
 initialisation/standalone/init_imogen.F90				@eleanorgb
 doc/source/namelists/imogen.nml.rst					@eleanorgb
 
+# Hydrology Module
+**/soil							@nicgedney @sfolwell
+**/control/shared/jules_hydrology_mod.F90		@nicgedney @sfolwell
+**/control/shared/jules_soil_mod.F90			@nicgedney @sfolwell
+**/initialisation/standalone/init_hydrology.F90		@nicgedney @sfolwell
+**/initialisation/standalone/init_soil.F90		@nicgedney @sfolwell
+doc/source/namelists/jules_hydrology.nml.rst		@nicgedney @sfolwell
+doc/source/namelists/jules_soil.nml.rst			@nicgedney @sfolwell
+rose-meta/jules-shared/jules-hydrology			@nicgedney @sfolwell @maggiehendry
+rose-meta/jules-shared/jules-soil			@nicgedney @sfolwell @maggiehendry
 
+# Biogenic fluxes Module
+**/deposition								@GarryHayman
+**/control/shared/jules_deposition_mod.F90				@GarryHayman
+**/initialisation/standalone/init_deposition_mod.F90			@GarryHayman
+**/initialisation/standalone/params/init_deposition_species_mod.F90	@GarryHayman
+**/science/params/deposition*						@GarryHayman
+doc/source/namelists/jules_deposition.nml.rst				@GarryHayman
+rose-meta/jules-shared/jules-deposition-species				@GarryHayman @maggiehendry
+rose-meta/jules-shared/jules-deposition-species-specific		@GarryHayman @maggiehendry
 
+# Fire Module
+**/fire			   			  @chantelleburton
+**/control/shared/fire_vars_mod.F90		  @chantelleburton
+**/initialisation/standalone/init_fire_mod.F90	  @chantelleburton
+doc/source/namelists/fire.nml.rst		  @chantelleburton

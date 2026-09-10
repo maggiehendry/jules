@@ -96,22 +96,22 @@ rose-meta/jules-shared/jules-pftparm					@beckyoliver @maggiehendry
 doc/source/namelists/red_parms.nml.rst			@mo-arthurargles
 
 # Biogeochemistry Module
-**/soil_biogeochem							@eleanorgb
-**/control/shared/*soil_biogeochem*_mod.F90				@eleanorgb
-**/control/shared/jules_plant_n_uptake_mod.F90				@eleanorgb
-**/control/shared/jules_soil_ecosse_mod.F90				@eleanorgb
-**/control/shared/next_gen_biogeochem_mod.F90				@eleanorgb @mo-arthurargles
-**/initialisation/standalone/init_plant_n_uptake_mod.F90		@eleanorgb
-**/initialisation/standalone/init_soil_biogeochem_mod.F90		@eleanorgb
-**/initialisation/standalone/init_soil_ecosse_mod.F90			@eleanorgb
-**/initialisation/standalone/initial_conditions/ecosse_init_mod.F90 	@eleanorgb
-**/science/soil/ch4_microbe_mod.F90					@eleanorgb
-**/science/surface/microbe_jls.F90					@eleanorgb
-**/science/vegetation/triffid_jls.F90					@eleanorgb
-**/science/vegetation/decay_jls.F90					@eleanorgb
-**/science/vegetation/dpm_rpm_jls.F90					@eleanorgb
-**/science/vegetation/soilcarb*						@eleanorgb
-doc/source/namelists/jules_soil_biogeochem.nml.rst			@eleanorgb
+**/soil_biogeochem							@eleanorgb @noahdsmith
+**/control/shared/*soil_biogeochem*_mod.F90				@eleanorgb @noahdsmith
+**/control/shared/jules_plant_n_uptake_mod.F90				@eleanorgb @noahdsmith
+**/control/shared/jules_soil_ecosse_mod.F90				@eleanorgb @noahdsmith
+**/control/shared/next_gen_biogeochem_mod.F90				@eleanorgb @noahdsmith @mo-arthurargles
+**/initialisation/standalone/init_plant_n_uptake_mod.F90		@eleanorgb @noahdsmith
+**/initialisation/standalone/init_soil_biogeochem_mod.F90		@eleanorgb @noahdsmith
+**/initialisation/standalone/init_soil_ecosse_mod.F90			@eleanorgb @noahdsmith
+**/initialisation/standalone/initial_conditions/ecosse_init_mod.F90 	@eleanorgb @noahdsmith
+**/science/soil/ch4_microbe_mod.F90					@eleanorgb @noahdsmith
+**/science/surface/microbe_jls.F90					@eleanorgb @noahdsmith
+**/science/vegetation/triffid_jls.F90					@eleanorgb @noahdsmith
+**/science/vegetation/decay_jls.F90					@eleanorgb @noahdsmith
+**/science/vegetation/dpm_rpm_jls.F90					@eleanorgb @noahdsmith
+**/science/vegetation/soilcarb*						@eleanorgb @noahdsmith
+doc/source/namelists/jules_soil_biogeochem.nml.rst			@eleanorgb @noahdsmith
 
 # IMOGEN
 **/imogen								@eleanorgb

@@ -60,6 +60,7 @@ rose-meta/jules-fcm-make/HEAD/rose-meta.conf			@MetOffice/ssdteam
 **/initialisation/standalone/grid/init_river_out_grid_mod.F90           	@maggiehendry
 **/initialisation/standalone/ancillaries/init_ancillaries_coupling_mod.F90	@maggiehendry
 **/initialisation/standalone/ancillaries/*river*_mod.F90       			@maggiehendry
+rose-meta/jules-shared/jules-rivers/						@maggiehendry
 
 # Lakes Module
 **/science/flake/						@HelenRJohnson
@@ -84,8 +85,8 @@ rose-meta/jules-shared/jules-surface/	@JMEdwardsXtr @maggiehendry
 **/science/params/veg_param_mod.F90					@beckyoliver
 doc/source/namelists/jules_vegetation.nml.rst				@beckyoliver
 doc/source/namelists/pft_params.nml.rst					@beckyoliver
-rose-meta/jules-shared/jules-vegetation					@beckyoliver @maggiehendry
-rose-meta/jules-shared/jules-pftparm					@beckyoliver @maggiehendry
+rose-meta/jules-shared/jules-vegetation/				@beckyoliver @maggiehendry
+rose-meta/jules-shared/jules-pftparm/					@beckyoliver @maggiehendry
 
 # RED Demography Module (Veg3)
 **/control/shared/veg3_field_mod.F90			@mo-arthurargles
@@ -94,6 +95,7 @@ rose-meta/jules-shared/jules-pftparm					@beckyoliver @maggiehendry
 **/initialisation/standalone/params/init_red_mod.F90	@mo-arthurargles
 **/science/params/red_io_mod.F90			@mo-arthurargles
 doc/source/namelists/red_parms.nml.rst			@mo-arthurargles
+rose-meta/jules-shared/jules-red/			@mo-arthurargles
 
 # Biogeochemistry Module
 **/soil_biogeochem							@eleanorgb @noahdsmith
@@ -112,6 +114,8 @@ doc/source/namelists/red_parms.nml.rst			@mo-arthurargles
 **/science/vegetation/dpm_rpm_jls.F90					@eleanorgb @noahdsmith
 **/science/vegetation/soilcarb*						@eleanorgb @noahdsmith
 doc/source/namelists/jules_soil_biogeochem.nml.rst			@eleanorgb @noahdsmith
+rose-meta/jules-shared/jules-soil-biogeochem/				@eleanorgb @noahdsmith
+rose-meta/jules-shared/jules-soil-ecosse/				@eleanorgb @noahdsmith
 
 # IMOGEN
 **/imogen								@eleanorgb
@@ -129,8 +133,8 @@ doc/source/namelists/imogen.nml.rst					@eleanorgb
 **/initialisation/standalone/init_soil.F90		@nicgedney @sfolwell
 doc/source/namelists/jules_hydrology.nml.rst		@nicgedney @sfolwell
 doc/source/namelists/jules_soil.nml.rst			@nicgedney @sfolwell
-rose-meta/jules-shared/jules-hydrology			@nicgedney @sfolwell @maggiehendry
-rose-meta/jules-shared/jules-soil			@nicgedney @sfolwell @maggiehendry
+rose-meta/jules-shared/jules-hydrology/			@nicgedney @sfolwell @maggiehendry
+rose-meta/jules-shared/jules-soil/			@nicgedney @sfolwell @maggiehendry
 
 # Biogenic fluxes Module
 **/deposition								@GarryHayman
@@ -139,8 +143,7 @@ rose-meta/jules-shared/jules-soil			@nicgedney @sfolwell @maggiehendry
 **/initialisation/standalone/params/init_deposition_species_mod.F90	@GarryHayman
 **/science/params/deposition*						@GarryHayman
 doc/source/namelists/jules_deposition.nml.rst				@GarryHayman
-rose-meta/jules-shared/jules-deposition-species				@GarryHayman @maggiehendry
-rose-meta/jules-shared/jules-deposition-species-specific		@GarryHayman @maggiehendry
+rose-meta/jules-shared/jules-deposition*				@GarryHayman @maggiehendry
 
 # Fire Module
 **/fire			   			  @chantelleburton

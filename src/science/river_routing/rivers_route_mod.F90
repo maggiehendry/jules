@@ -98,10 +98,6 @@ TYPE(rivers_type), INTENT(IN OUT) :: rivers
 !------------------------------------------------------------------------------
 INTEGER :: ip                        !  loop counter
 
-INTEGER :: year                      !  current model year
-INTEGER, SAVE :: year_change = -1
-!  year of last reservoir capacity update
-
 !------------------------------------------------------------------------------
 ! Local array variables
 !------------------------------------------------------------------------------
@@ -134,13 +130,9 @@ END DO
 ! Update reservoir capacities at the start and on each year change.
 !------------------------------------------------------------------------------
 IF ( l_reservoirs ) THEN
-  CALL current_model_time(year=year)
-  IF ( year /= year_change ) THEN
     CALL update_reservoirs( rivers%res_capacity,                               &
                                   rivers%res_year,                             &
                                   rivers%res_cap_current )
-    year_change = year
-  END IF
 END IF
 
 !------------------------------------------------------------------------------
@@ -405,6 +397,8 @@ USE jules_rivers_mod, ONLY:                                                    &
 
 USE time_info_mod, ONLY: current_model_time
 
+USE missing_data_mod, ONLY: imdi
+
 IMPLICIT NONE
 
 !------------------------------------------------------------------------------
@@ -428,16 +422,20 @@ REAL(KIND=real_jlslsm), INTENT(IN OUT) ::                                      &
 !------------------------------------------------------------------------------
 INTEGER :: i    ! Loop counter.
 INTEGER :: year ! Current model year.
+INTEGER, SAVE :: year_change = imdi
+!  year of last reservoir capacity update
 
 !end of header
 !------------------------------------------------------------------------------
 CALL current_model_time(year)
-
-DO i = 1, np_rivers
-  IF ( res_year(i) <= year ) THEN
-    res_cap_current(i) = res_capacity(i)
-  END IF
-END DO
+IF ( year /= year_change ) THEN
+  DO i = 1, np_rivers
+    IF ( res_year(i) <= year ) THEN
+      res_cap_current(i) = res_capacity(i)
+    END IF
+  END DO
+  year_change = year
+END IF
 
 END SUBROUTINE update_reservoirs
 

@@ -476,10 +476,12 @@ TYPE :: rivers_data_type
                             ! River routing point latitude
   REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_lon_rp(:)
                             ! River routing point longitude
+!*** These should be integers; sort later
   REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_ilat_rp(:)
                             ! River routing index in latitude direction
   REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_ilon_rp(:)
                             ! River routing index in longitude direction
+!*** These should be integers; sort later
   REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_x_coord_rp(:)
                             ! River routing point projection x coordinate.
                             ! Units can differ between input datasets.
@@ -749,13 +751,6 @@ ALLOCATE(rivers_data%rivers_adj_on_landpts(land_pts))
 ! for JULES standaline
 ! This will be changed in #1258 so the setup has been left in.
 #if defined(UM_JULES)
-!!!ALLOCATE(rivers_data%rivers_seq_rp(np_rivers))
-!!!ALLOCATE(rivers_data%rivers_lat_rp(np_rivers))
-!!!ALLOCATE(rivers_data%rivers_lon_rp(np_rivers))
-!!!ALLOCATE(rivers_data%rivers_ilat_rp(np_rivers))
-!!!ALLOCATE(rivers_data%rivers_ilon_rp(np_rivers))
-!!!ALLOCATE(rivers_data%rivers_x_coord_rp(np_rivers))
-!!!ALLOCATE(rivers_data%rivers_y_coord_rp(np_rivers))
 !!!ALLOCATE(rivers_data%rivers_storage(nx_rivers, ny_rivers))
 !!!ALLOCATE(rivers_data%rivers_seq(nx_rivers, ny_rivers))
 !!!ALLOCATE(rivers_data%rivers_dir(nx_rivers, ny_rivers))
@@ -802,13 +797,6 @@ rivers_data%acc_lake_evap_gb(:,:)   = 0.0
 rivers_data%rivers_sto_per_m2_on_landpts(:) = 0.0
 rivers_data%rivers_adj_on_landpts(:) = 0.0
 #if defined(UM_JULES)
-!!!rivers_data%rivers_seq_rp(:) = 0
-!!!rivers_data%rivers_lat_rp(:) = 0.0
-!!!rivers_data%rivers_lon_rp(:) = 0.0
-!!!rivers_data%rivers_ilat_rp(:) = 0.0
-!!!rivers_data%rivers_ilon_rp(:) = 0.0
-!!!rivers_data%rivers_x_coord_rp(:) = 0.0
-!!!rivers_data%rivers_y_coord_rp(:) = 0.0
 !!!rivers_data%rivers_seq(:,:) = 0.0
 !!!rivers_data%rivers_dir(:,:) = 0.0
 !!!rivers_data%rivers_dra(:,:) = 0.0
@@ -1461,13 +1449,14 @@ DEALLOCATE(rivers_data%rfm_iarea_rp)
 DEALLOCATE(rivers_data%rfm_land_rp)
 DEALLOCATE(rivers_data%rivers_index_rp)
 DEALLOCATE(rivers_data%rivers_next_rp)
-!!!DEALLOCATE(rivers_data%rivers_seq_rp)
-!!!DEALLOCATE(rivers_data%rivers_lat_rp)
-!!!DEALLOCATE(rivers_data%rivers_lon_rp)
-!!!DEALLOCATE(rivers_data%rivers_ilat_rp)
-!!!DEALLOCATE(rivers_data%rivers_ilon_rp)
-!!!DEALLOCATE(rivers_data%rivers_x_coord_rp)
-!!!DEALLOCATE(rivers_data%rivers_y_coord_rp)
+DEALLOCATE(rivers_data%rivers_seq_rp)
+DEALLOCATE(rivers_data%rivers_sto_rp)
+DEALLOCATE(rivers_data%rivers_lat_rp)
+DEALLOCATE(rivers_data%rivers_lon_rp)
+DEALLOCATE(rivers_data%rivers_ilat_rp)
+DEALLOCATE(rivers_data%rivers_ilon_rp)
+DEALLOCATE(rivers_data%rivers_x_coord_rp)
+DEALLOCATE(rivers_data%rivers_y_coord_rp)
 DEALLOCATE(rivers_data%rflow_rp)
 DEALLOCATE(rivers_data%rrun_rp)
 DEALLOCATE(rivers_data%rrun_surf_rp)
@@ -1528,13 +1517,6 @@ rivers%rivers_sto_per_m2_on_landpts => rivers_data%rivers_sto_per_m2_on_landpts
 rivers%rivers_adj_on_landpts => rivers_data%rivers_adj_on_landpts
 #if defined(UM_JULES)
 rivers%global_land_index => rivers_data%global_land_index
-!!!rivers%rivers_seq_rp => rivers_data%rivers_seq_rp
-!!!rivers%rivers_lat_rp => rivers_data%rivers_lat_rp
-!!!rivers%rivers_lon_rp => rivers_data%rivers_lon_rp
-!!!rivers%rivers_ilat_rp => rivers_data%rivers_ilat_rp
-!!!rivers%rivers_ilon_rp => rivers_data%rivers_ilon_rp
-!!!rivers%rivers_x_coord_rp => rivers_data%rivers_x_coord_rp
-!!!rivers%rivers_y_coord_rp => rivers_data%rivers_y_coord_rp
 !!!rivers%rivers_seq => rivers_data%rivers_seq
 !!!rivers%rivers_dir => rivers_data%rivers_dir
 !!!rivers%rivers_dra => rivers_data%rivers_dra
@@ -1585,14 +1567,14 @@ NULLIFY(rivers%rfm_iarea_rp)
 NULLIFY(rivers%rfm_land_rp)
 NULLIFY(rivers%rivers_index_rp)
 NULLIFY(rivers%rivers_next_rp)
-!!!NULLIFY(rivers_seq_rp)
+NULLIFY(rivers%rivers_seq_rp)
 NULLIFY(rivers%rivers_sto_rp)
-!!!NULLIFY(rivers_lat_rp)
-!!!NULLIFY(rivers_lon_rp)
-!!!NULLIFY(rivers_ilat_rp)
-!!!NULLIFY(rivers_ilon_rp)
-!!!NULLIFY(rivers_x_coord_rp)
-!!!NULLIFY(rivers_y_coord_rp)
+NULLIFY(rivers%rivers_lat_rp)
+NULLIFY(rivers%rivers_lon_rp)
+NULLIFY(rivers%rivers_ilat_rp)
+NULLIFY(rivers%rivers_ilon_rp)
+NULLIFY(rivers%rivers_x_coord_rp)
+NULLIFY(rivers%rivers_y_coord_rp)
 NULLIFY(rivers%rflow_rp)
 NULLIFY(rivers%rrun_rp)
 NULLIFY(rivers%rrun_surf_rp)
@@ -1642,9 +1624,13 @@ USE atm_land_sea_mask, ONLY: global_land_pts => atmos_number_of_landpts
 USE model_grid_mod, ONLY: global_land_pts
 #endif
 
+!*** These may need to be passed in through argument list
 USE jules_model_environment_mod, ONLY: l_oasis_rivers
 
 USE jules_water_resources_mod, ONLY: l_water_resources
+
+USE coastal, ONLY: l_use_land_fraction
+!*** These may need to be passed in through argument list
 
 IMPLICIT NONE
 
@@ -1705,31 +1691,36 @@ ELSE
   np_rivers_tmp = 1
 END IF
 
-!!! Ancillaries and related fields.
+! Ancillaries and related fields.
 ALLOCATE(rivers_data%rivers_boxareas_rp(np_rivers_tmp),  STAT = ERROR)
 error_sum = error_sum + ERROR
 ALLOCATE(rivers_data%rivers_index_rp(np_rivers_tmp),     STAT = ERROR)
 error_sum = error_sum + ERROR
-!!ALLOCATE(rivers_data%rivers_lat_rp(np_rivers_tmp),       STAT = ERROR)
-!!error_sum = error_sum + ERROR
-!!ALLOCATE(rivers_data%rivers_lon_rp(np_rivers_tmp),       STAT = ERROR)
-!!error_sum = error_sum + ERROR
+ALLOCATE(rivers_data%rivers_lat_rp(np_rivers_tmp),       STAT = ERROR)
+error_sum = error_sum + ERROR
+ALLOCATE(rivers_data%rivers_lon_rp(np_rivers_tmp),       STAT = ERROR)
+error_sum = error_sum + ERROR
 ALLOCATE(rivers_data%rivers_next_rp(np_rivers_tmp),      STAT = ERROR)
 error_sum = error_sum + ERROR
-!!ALLOCATE(rivers_data%rivers_x_coord_rp(np_rivers_tmp),   STAT = ERROR)
-!!error_sum = error_sum + ERROR
-!!ALLOCATE(rivers_data%rivers_y_coord_rp(np_rivers_tmp),   STAT = ERROR)
-!!error_sum = error_sum + ERROR
-!!ALLOCATE(rivers_data%land_fraction_rp(np_rivers),        STAT = ERROR)
-!!error_sum = error_sum + ERROR
-!!
-!!! Fluxes.
+!*** These may not need to be in the rivers TYPE, only used in standalone IO
+!*** i.e. not by UM; deal with later.
+ALLOCATE(rivers_data%rivers_x_coord_rp(np_rivers_tmp),   STAT = ERROR)
+error_sum = error_sum + ERROR
+ALLOCATE(rivers_data%rivers_y_coord_rp(np_rivers_tmp),   STAT = ERROR)
+error_sum = error_sum + ERROR
+!!!***
+!!! This isn't required by UM at full size, but is used in science routine.
+!!! Required by l_inland_outflow, but this isn't set by standalone until later.
+ALLOCATE(rivers_data%land_fraction_rp(np_rivers_tmp),    STAT = ERROR)
+error_sum = error_sum + ERROR
+
+! Fluxes.
 ALLOCATE(rivers_data%rflow_rp(np_rivers_tmp),            STAT = ERROR)
 error_sum = error_sum + ERROR
-ALLOCATE(rivers_data%rivers_outflow_rp(np_rivers),       STAT = ERROR)
+ALLOCATE(rivers_data%rivers_outflow_rp(np_rivers_tmp),   STAT = ERROR)
 error_sum = error_sum + ERROR
-!!ALLOCATE(rivers_data%inland_outflow_rp(np_rivers),       STAT = ERROR)
-!!error_sum = error_sum + ERROR
+ALLOCATE(rivers_data%inland_outflow_rp(np_rivers_tmp),   STAT = ERROR)
+error_sum = error_sum + ERROR
 ALLOCATE(rivers_data%rrun_rp(np_rivers_tmp),             STAT = ERROR)
 error_sum = error_sum + ERROR
 ALLOCATE(rivers_data%rrun_sub_surf_rp(np_rivers_tmp),    STAT = ERROR)
@@ -1743,97 +1734,97 @@ error_sum = error_sum + ERROR
 ALLOCATE(rivers_data%map_river_to_land_points(np_rivers_tmp), STAT = ERROR)
 error_sum = error_sum + ERROR
 
-!!!------------------------------------------------------------------------------
-!!! Allocate CaMa-Flood variables
-!!!------------------------------------------------------------------------------
-!!IF ( i_river_vn == rivers_camaflood .AND. l_is_master_task ) THEN
-!!  ! Full size.
-!!  np_rivers_tmp = np_rivers
-!!ELSE
-!!  ! Minimum size.
-!!  np_rivers_tmp = 1
-!!END IF
-!!
-!!! CaMa-Flood ancillaries.
-!!ALLOCATE( rivers_data%channel_depth(np_rivers_tmp),    STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!ALLOCATE( rivers_data%channel_width(np_rivers_tmp),    STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!ALLOCATE( rivers_data%river_distance(np_rivers_tmp),  STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!ALLOCATE( rivers_data%river_elevation(np_rivers_tmp), STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!ALLOCATE( rivers_data%river_length(np_rivers_tmp),    STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!ALLOCATE( rivers_data%river_manning(np_rivers_tmp),   STAT = ERROR )
-!!
-!!! CaMa-Flood ancillaries that depend on another switch.
-!!! Mean sea level.
-!!IF ( i_river_vn == rivers_camaflood .AND. l_sea_level                          &
-!!     .AND. l_is_master_task ) THEN
-!!  ! Full size.
-!!  np_rivers_tmp = np_rivers
-!!ELSE
-!!  ! Minimum size.
-!!  np_rivers_tmp = 1
-!!END IF
-!!ALLOCATE( rivers_data%mean_sea_level(np_rivers_tmp), STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!
-!!! Sea level.
-!!IF ( i_river_vn == rivers_camaflood .AND. l_vary_sea_level                     &
-!!     .AND. l_is_master_task ) THEN
-!!  ! Full size.
-!!  np_rivers_tmp = np_rivers
-!!ELSE
-!!  ! Minimum size.
-!!  np_rivers_tmp = 1
-!!END IF
-!!ALLOCATE( rivers_data%sea_level(np_rivers_tmp),  STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!
-!!! Sea level defined on land points.
-!!! l_vary_sea_level=T requires a land point field on every task.
-!!IF ( i_river_vn == rivers_camaflood .AND. l_vary_sea_level ) THEN
-!!  ! Full size.
-!!  np_land_tmp   = land_pts
-!!ELSE
-!!  ! Minimum size.
-!!  np_land_tmp   = 1
-!!END IF
-!!ALLOCATE( rivers_data%sea_level_lp(np_land_tmp), STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!
-!!! CaMa-Flood prognostic variables.
-!!IF ( i_river_vn == rivers_camaflood .AND. l_is_master_task ) THEN
-!!  ! Full size.
-!!  np_rivers_tmp = np_rivers
-!!ELSE
-!!  ! Minimum size.
-!!  np_rivers_tmp = 1
-!!END IF
-!!
-!!ALLOCATE( rivers_data%flood_flow(np_rivers_tmp),            STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!ALLOCATE( rivers_data%flood_flow_prev(np_rivers_tmp),       STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!ALLOCATE( rivers_data%flood_storage(np_rivers_tmp),         STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!ALLOCATE( rivers_data%flood_storage_prev(np_rivers_tmp),    STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!ALLOCATE( rivers_data%river_channel_flow(np_rivers_tmp),    STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!ALLOCATE( rivers_data%river_channel_storage(np_rivers_tmp), STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!ALLOCATE( rivers_data%river_depth_prev(np_rivers_tmp),      STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!ALLOCATE( rivers_data%river_flow_prev(np_rivers_tmp),       STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!
-!!! CaMa-Flood diagnostic variables.
-!!ALLOCATE( rivers_data%river_depth(np_rivers_tmp), STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!
+!------------------------------------------------------------------------------
+! Allocate CaMa-Flood variables
+!------------------------------------------------------------------------------
+IF ( i_river_vn == rivers_camaflood .AND. l_is_master_task ) THEN
+  ! Full size.
+  np_rivers_tmp = np_rivers
+ELSE
+  ! Minimum size.
+  np_rivers_tmp = 1
+END IF
+
+! CaMa-Flood ancillaries.
+ALLOCATE( rivers_data%channel_depth(np_rivers_tmp),    STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%channel_width(np_rivers_tmp),    STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%river_distance(np_rivers_tmp),  STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%river_elevation(np_rivers_tmp), STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%river_length(np_rivers_tmp),    STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%river_manning(np_rivers_tmp),   STAT = ERROR )
+
+! CaMa-Flood ancillaries that depend on another switch.
+! Mean sea level.
+IF ( i_river_vn == rivers_camaflood .AND. l_sea_level                          &
+     .AND. l_is_master_task ) THEN
+  ! Full size.
+  np_rivers_tmp = np_rivers
+ELSE
+  ! Minimum size.
+  np_rivers_tmp = 1
+END IF
+ALLOCATE( rivers_data%mean_sea_level(np_rivers_tmp), STAT = ERROR )
+error_sum = error_sum + ERROR
+
+! Sea level.
+IF ( i_river_vn == rivers_camaflood .AND. l_vary_sea_level                     &
+     .AND. l_is_master_task ) THEN
+  ! Full size.
+  np_rivers_tmp = np_rivers
+ELSE
+  ! Minimum size.
+  np_rivers_tmp = 1
+END IF
+ALLOCATE( rivers_data%sea_level(np_rivers_tmp),  STAT = ERROR )
+error_sum = error_sum + ERROR
+
+! Sea level defined on land points.
+! l_vary_sea_level=T requires a land point field on every task.
+IF ( i_river_vn == rivers_camaflood .AND. l_vary_sea_level ) THEN
+  ! Full size.
+  np_land_tmp   = land_pts
+ELSE
+  ! Minimum size.
+  np_land_tmp   = 1
+END IF
+ALLOCATE( rivers_data%sea_level_lp(np_land_tmp), STAT = ERROR )
+error_sum = error_sum + ERROR
+
+! CaMa-Flood prognostic variables.
+IF ( i_river_vn == rivers_camaflood .AND. l_is_master_task ) THEN
+  ! Full size.
+  np_rivers_tmp = np_rivers
+ELSE
+  ! Minimum size.
+  np_rivers_tmp = 1
+END IF
+
+ALLOCATE( rivers_data%flood_flow(np_rivers_tmp),            STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%flood_flow_prev(np_rivers_tmp),       STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%flood_storage(np_rivers_tmp),         STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%flood_storage_prev(np_rivers_tmp),    STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%river_channel_flow(np_rivers_tmp),    STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%river_channel_storage(np_rivers_tmp), STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%river_depth_prev(np_rivers_tmp),      STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%river_flow_prev(np_rivers_tmp),       STAT = ERROR )
+error_sum = error_sum + ERROR
+
+! CaMa-Flood diagnostic variables.
+ALLOCATE( rivers_data%river_depth(np_rivers_tmp), STAT = ERROR )
+error_sum = error_sum + ERROR
+
 !------------------------------------------------------------------------------
 ! Allocate RFM variables
 !------------------------------------------------------------------------------
@@ -1879,135 +1870,135 @@ ELSE
 END IF
 
 ! TRIP ancillaries and related fields.
-!!ALLOCATE(rivers_data%rivers_seq_rp(np_rivers_tmp), STAT = ERROR)
-!!error_sum = error_sum + ERROR
+ALLOCATE(rivers_data%rivers_seq_rp(np_rivers_tmp), STAT = ERROR)
+error_sum = error_sum + ERROR
 ! TRIP stores.
 ALLOCATE(rivers_data%rivers_sto_rp(np_rivers_tmp), STAT = ERROR)
 error_sum = error_sum + ERROR
 
-!!!------------------------------------------------------------------------------
-!!! Allocate River coupling variables.
-!!!------------------------------------------------------------------------------
-!!IF ( l_oasis_rivers .AND. l_is_master_task ) THEN
-!!  ! Full size.
-!!  np_rivers_tmp = np_rivers
-!!ELSE
-!!  ! Minimum size.
-!!  np_rivers_tmp = 1
-!!END IF
-!!ALLOCATE(rivers_data%sub_surf_roff_rp(np_rivers_tmp), STAT = ERROR)
-!!error_sum = error_sum + ERROR
-!!ALLOCATE(rivers_data%surf_roff_rp(np_rivers_tmp),     STAT = ERROR)
-!!error_sum = error_sum + ERROR
-!!ALLOCATE(rivers_data%rivers_ilat_rp(np_rivers_tmp),   STAT = ERROR)
-!!error_sum = error_sum + ERROR
-!!ALLOCATE(rivers_data%rivers_ilon_rp(np_rivers_tmp),   STAT = ERROR)
-!!error_sum = error_sum + ERROR
-!!
-!!IF ( l_outflow_per_river .AND. l_is_master_task ) THEN
-!!  ! Full size.
-!!  np_rivers_tmp = np_rivers
-!!ELSE
-!!  ! Minimum size.
-!!  np_rivers_tmp = 1
-!!END IF
-!!ALLOCATE(rivers_data%rivers_outflow_number_rp(np_rivers_tmp), STAT = ERROR)
-!!error_sum = error_sum + ERROR
-!!
-!!!------------------------------------------------------------------------------
-!!! Allocate minor reservoir variables.
-!!!------------------------------------------------------------------------------
-!!IF ( l_minor_reservoirs .AND. l_is_master_task ) THEN
-!!  ! Full size.
-!!  np_rivers_tmp      = np_rivers
-!!  np_global_land_tmp = global_land_pts
-!!ELSE
-!!  ! Minimum size.
-!!  np_rivers_tmp      = 1
-!!  np_global_land_tmp = 1
-!!END IF
-!!
-!!! Minor reservoir ancillaries.
-!!ALLOCATE( rivers_data%minor_res_capacity(np_rivers_tmp),      STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!ALLOCATE( rivers_data%minor_res_frac(np_rivers_tmp),          STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!! Minor reservoir prognostics.
-!!ALLOCATE( rivers_data%minor_res_storage(np_rivers_tmp),       STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!! Minor reservoir coupling to rivers.
-!!ALLOCATE( rivers_data%tot_abstracted_minor_res_global(np_global_land_tmp),     &
-!!                                                              STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!
-!!!------------------------------------------------------------------------------
-!!! Allocate further variables for coupling to water resources.
-!!!------------------------------------------------------------------------------
-!!IF ( l_water_resources .AND. l_is_master_task ) THEN
-!!  ! Full size.
-!!  np_global_land_tmp = global_land_pts
-!!ELSE
-!!  ! Minimum size.
-!!  np_global_land_tmp = 1
-!!END IF
-!!
-!!! Coupling abstractions from rivers.
-!!ALLOCATE( rivers_data%tot_net_abstracted_river_global(np_global_land_tmp),     &
-!!                                                              STAT = ERROR )
-!!error_sum = error_sum + ERROR
-!!
-!!IF ( error_sum /= 0 ) THEN
-!!  errcode = 101
-!!  CALL ereport( RoutineName, errcode,                                          &
-!!                "Error allocating for routing point arrays." )
-!!END IF
-!!
-!!!------------------------------------------------------------------------------
-!!! Initialise array values to missing values, except fluxes can be zero to
-!!! preserve existing results.
-!!!------------------------------------------------------------------------------
-!!! Ancillaries etc.
+!------------------------------------------------------------------------------
+! Allocate River coupling variables.
+!------------------------------------------------------------------------------
+IF ( l_oasis_rivers .AND. l_is_master_task ) THEN
+  ! Full size.
+  np_rivers_tmp = np_rivers
+ELSE
+  ! Minimum size.
+  np_rivers_tmp = 1
+END IF
+ALLOCATE(rivers_data%sub_surf_roff_rp(np_rivers_tmp), STAT = ERROR)
+error_sum = error_sum + ERROR
+ALLOCATE(rivers_data%surf_roff_rp(np_rivers_tmp),     STAT = ERROR)
+error_sum = error_sum + ERROR
+ALLOCATE(rivers_data%rivers_ilat_rp(np_rivers_tmp),   STAT = ERROR)
+error_sum = error_sum + ERROR
+ALLOCATE(rivers_data%rivers_ilon_rp(np_rivers_tmp),   STAT = ERROR)
+error_sum = error_sum + ERROR
+
+IF ( l_outflow_per_river .AND. l_is_master_task ) THEN
+  ! Full size.
+  np_rivers_tmp = np_rivers
+ELSE
+  ! Minimum size.
+  np_rivers_tmp = 1
+END IF
+ALLOCATE(rivers_data%rivers_outflow_number_rp(np_rivers_tmp), STAT = ERROR)
+error_sum = error_sum + ERROR
+
+!------------------------------------------------------------------------------
+! Allocate minor reservoir variables.
+!------------------------------------------------------------------------------
+IF ( l_minor_reservoirs .AND. l_is_master_task ) THEN
+  ! Full size.
+  np_rivers_tmp      = np_rivers
+  np_global_land_tmp = global_land_pts
+ELSE
+  ! Minimum size.
+  np_rivers_tmp      = 1
+  np_global_land_tmp = 1
+END IF
+
+! Minor reservoir ancillaries.
+ALLOCATE( rivers_data%minor_res_capacity(np_rivers_tmp),      STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%minor_res_frac(np_rivers_tmp),          STAT = ERROR )
+error_sum = error_sum + ERROR
+! Minor reservoir prognostics.
+ALLOCATE( rivers_data%minor_res_storage(np_rivers_tmp),       STAT = ERROR )
+error_sum = error_sum + ERROR
+! Minor reservoir coupling to rivers.
+ALLOCATE( rivers_data%tot_abstracted_minor_res_global(np_global_land_tmp),     &
+                                                              STAT = ERROR )
+error_sum = error_sum + ERROR
+
+!------------------------------------------------------------------------------
+! Allocate further variables for coupling to water resources.
+!------------------------------------------------------------------------------
+IF ( l_water_resources .AND. l_is_master_task ) THEN
+  ! Full size.
+  np_global_land_tmp = global_land_pts
+ELSE
+  ! Minimum size.
+  np_global_land_tmp = 1
+END IF
+
+! Coupling abstractions from rivers.
+ALLOCATE( rivers_data%tot_net_abstracted_river_global(np_global_land_tmp),     &
+                                                              STAT = ERROR )
+error_sum = error_sum + ERROR
+
+IF ( error_sum /= 0 ) THEN
+  errcode = 101
+  CALL ereport( RoutineName, errcode,                                          &
+                "Error allocating for routing point arrays." )
+END IF
+
+!------------------------------------------------------------------------------
+! Initialise array values to missing values, except fluxes can be zero to
+! preserve existing results.
+!------------------------------------------------------------------------------
+! Ancillaries etc.
 rivers_data%rivers_boxareas_rp(:) = rmdi
 rivers_data%rivers_index_rp(:)    = imdi
-!!rivers_data%rivers_lat_rp(:)     = rmdi
-!!rivers_data%rivers_lon_rp(:)     = rmdi
+rivers_data%rivers_lat_rp(:)      = rmdi
+rivers_data%rivers_lon_rp(:)      = rmdi
 rivers_data%rivers_next_rp(:)     = imdi
-!!rivers_data%rivers_x_coord_rp(:) = rmdi
-!!rivers_data%rivers_y_coord_rp(:) = rmdi
-!!rivers_data%land_fraction_rp(:)  = 1.0
+rivers_data%rivers_x_coord_rp(:)  = rmdi
+rivers_data%rivers_y_coord_rp(:)  = rmdi
+rivers_data%land_fraction_rp(:)   = 1.0
 ! Fluxes.
 rivers_data%rflow_rp(:)          = 0.0
 rivers_data%rivers_outflow_rp(:) = rmdi
 rivers_data%rrun_rp(:)           = 0.0
 rivers_data%rrun_sub_surf_rp(:)  = 0.0
 rivers_data%rrun_surf_rp(:)      = 0.0
-!!rivers_data%inland_outflow_rp(:) = rmdi
+rivers_data%inland_outflow_rp(:) = rmdi
 
 ! Initialise regridding variable.
 rivers_data%map_river_to_land_points(:) = imdi
 
-!!! Initialise CaMa-Flood array values
-!!! CaMa-Flood ancillary variables.
-!!rivers_data%channel_depth(:)    = rmdi
-!!rivers_data%channel_width(:)    = rmdi
-!!rivers_data%river_distance(:)   = rmdi
-!!rivers_data%river_elevation(:)  = rmdi
-!!rivers_data%river_length(:)     = rmdi
-!!rivers_data%river_manning(:)    = rmdi
-!!rivers_data%mean_sea_level(:)   = rmdi
-!!rivers_data%sea_level(:)        = rmdi
-!!rivers_data%sea_level_lp(:)     = rmdi
-!!! CaMa-Flood prognostic variables.
-!!rivers_data%flood_flow(:)       = rmdi
-!!rivers_data%flood_flow_prev(:)  = rmdi
-!!rivers_data%flood_storage(:)    = rmdi
-!!rivers_data%flood_storage_prev(:)    = rmdi
-!!rivers_data%river_channel_flow(:)    = rmdi
-!!rivers_data%river_channel_storage(:) = rmdi
-!!rivers_data%river_depth_prev(:) = rmdi
-!!rivers_data%river_flow_prev(:)  = rmdi
-!!! CaMa-Flood diagnostic variables.
-!!rivers_data%river_depth(:)      = rmdi
+! Initialise CaMa-Flood array values
+! CaMa-Flood ancillary variables.
+rivers_data%channel_depth(:)    = rmdi
+rivers_data%channel_width(:)    = rmdi
+rivers_data%river_distance(:)   = rmdi
+rivers_data%river_elevation(:)  = rmdi
+rivers_data%river_length(:)     = rmdi
+rivers_data%river_manning(:)    = rmdi
+rivers_data%mean_sea_level(:)   = rmdi
+rivers_data%sea_level(:)        = rmdi
+rivers_data%sea_level_lp(:)     = rmdi
+! CaMa-Flood prognostic variables.
+rivers_data%flood_flow(:)       = rmdi
+rivers_data%flood_flow_prev(:)  = rmdi
+rivers_data%flood_storage(:)    = rmdi
+rivers_data%flood_storage_prev(:)    = rmdi
+rivers_data%river_channel_flow(:)    = rmdi
+rivers_data%river_channel_storage(:) = rmdi
+rivers_data%river_depth_prev(:) = rmdi
+rivers_data%river_flow_prev(:)  = rmdi
+! CaMa-Flood diagnostic variables.
+rivers_data%river_depth(:)      = rmdi
 
 ! Initialise RFM array values
 rivers_data%rfm_flowobs1_rp(:)  = rmdi
@@ -2023,74 +2014,78 @@ rivers_data%rfm_rivflow_rp(:)   = 0.0
 rivers_data%rfm_substore_rp(:)  = 0.0
 rivers_data%rfm_surfstore_rp(:) = 0.0
 
-!!! Initialise TRIP array values
-!!rivers_data%rivers_seq_rp(:) = imdi
+! Initialise TRIP array values
+rivers_data%rivers_seq_rp(:) = imdi
 ! rivers_sto_rp should be initialised to zero to preserve existing results and
 ! until better initialisation is possible.
 rivers_data%rivers_sto_rp(:) = 0.0
-!!
-!!! Initialise coupling variables.
-!!rivers_data%rivers_outflow_number_rp(:) = imdi
-!!rivers_data%sub_surf_roff_rp(:) = 0.0
-!!rivers_data%surf_roff_rp(:)     = 0.0
-!!
-!!! Initialise minor reservoir variables. Storage (the state variable) should be
-!!! initialised to zero until better initialisation is possible.
-!!rivers_data%minor_res_capacity(:) = rmdi
-!!rivers_data%minor_res_frac(:)     = rmdi
-!!rivers_data%minor_res_storage(:)  = 0.0
-!!
-!!! Initialise further variables to couple to water resources.
-!!rivers_data%tot_abstracted_minor_res_global(:) = rmdi
-!!rivers_data%tot_net_abstracted_river_global(:) = rmdi
 
-!!!------------------------------------------------------------------------------
-!!! Associate pointers
-!!!------------------------------------------------------------------------------
-!!! Ancillaries etc.
+! Initialise coupling variables.
+rivers_data%rivers_outflow_number_rp(:) = imdi
+rivers_data%sub_surf_roff_rp(:) = 0.0
+rivers_data%surf_roff_rp(:)     = 0.0
+!*** These should be integers; sort later
+rivers_data%rivers_ilat_rp(:)   = rmdi
+rivers_data%rivers_ilon_rp(:)   = rmdi
+!*** These should be integers; sort later
+
+! Initialise minor reservoir variables. Storage (the state variable) should be
+! initialised to zero until better initialisation is possible.
+rivers_data%minor_res_capacity(:) = rmdi
+rivers_data%minor_res_frac(:)     = rmdi
+rivers_data%minor_res_storage(:)  = 0.0
+
+! Initialise further variables to couple to water resources.
+rivers_data%tot_abstracted_minor_res_global(:) = rmdi
+rivers_data%tot_net_abstracted_river_global(:) = rmdi
+
+!------------------------------------------------------------------------------
+! Associate pointers
+!------------------------------------------------------------------------------
+! Ancillaries etc.
 rivers%rivers_boxareas_rp => rivers_data%rivers_boxareas_rp
 rivers%rivers_index_rp => rivers_data%rivers_index_rp
-!!rivers%rivers_lat_rp => rivers_data%rivers_lat_rp
-!!rivers%rivers_lon_rp => rivers_data%rivers_lon_rp
-!!rivers%rivers_ilat_rp => rivers_data%rivers_ilat_rp
-!!rivers%rivers_ilon_rp => rivers_data%rivers_ilon_rp
+rivers%rivers_lat_rp => rivers_data%rivers_lat_rp
+rivers%rivers_lon_rp => rivers_data%rivers_lon_rp
+rivers%rivers_ilat_rp => rivers_data%rivers_ilat_rp
+rivers%rivers_ilon_rp => rivers_data%rivers_ilon_rp
 rivers%rivers_next_rp => rivers_data%rivers_next_rp
-!!rivers%rivers_x_coord_rp => rivers_data%rivers_x_coord_rp
-!!rivers%rivers_y_coord_rp => rivers_data%rivers_y_coord_rp
-!!rivers%land_fraction_rp => rivers_data%land_fraction_rp
-!!! Fluxes.
+rivers%rivers_x_coord_rp => rivers_data%rivers_x_coord_rp
+rivers%rivers_y_coord_rp => rivers_data%rivers_y_coord_rp
+rivers%land_fraction_rp => rivers_data%land_fraction_rp
+! Fluxes.
 rivers%rflow_rp => rivers_data%rflow_rp
 rivers%rivers_outflow_rp => rivers_data%rivers_outflow_rp
 rivers%rrun_rp => rivers_data%rrun_rp
 rivers%rrun_sub_surf_rp => rivers_data%rrun_sub_surf_rp
 rivers%rrun_surf_rp => rivers_data%rrun_surf_rp
-!!rivers%inland_outflow_rp => rivers_data%inland_outflow_rp
+rivers%inland_outflow_rp => rivers_data%inland_outflow_rp
 
 ! Regridding variable.
 rivers%map_river_to_land_points => rivers_data%map_river_to_land_points
 
-!!! CaMa-Flood variables.
-!!! CaMa-Flood ancillary variables.
-!!rivers%channel_depth      => rivers_data%channel_depth
-!!rivers%channel_width      => rivers_data%channel_width
-!!rivers%river_distance     => rivers_data%river_distance
-!!rivers%river_elevation    => rivers_data%river_elevation
-!!rivers%river_length       => rivers_data%river_length
-!!rivers%river_manning      => rivers_data%river_manning
-!!rivers%mean_sea_level     => rivers_data%mean_sea_level
-!!rivers%sea_level          => rivers_data%sea_level
-!!rivers%sea_level_lp       => rivers_data%sea_level_lp
-!!! CaMa-Flood prognostic variables.
-!!rivers%flood_flow         => rivers_data%flood_flow
-!!rivers%flood_flow_prev    => rivers_data%flood_flow_prev
-!!rivers%flood_storage      => rivers_data%flood_storage
-!!rivers%flood_storage_prev => rivers_data%flood_storage_prev
-!!rivers%river_channel_flow => rivers_data%river_channel_flow
-!!rivers%river_channel_storage => rivers_data%river_channel_storage
-!!rivers%river_depth_prev   => rivers_data%river_depth_prev
-!!rivers%river_flow_prev    => rivers_data%river_flow_prev
-!!! CaMa-Flood diagnostic variables.
-!!rivers%river_depth        => rivers_data%river_depth
+! CaMa-Flood variables.
+! CaMa-Flood ancillary variables.
+rivers%channel_depth      => rivers_data%channel_depth
+rivers%channel_width      => rivers_data%channel_width
+rivers%river_distance     => rivers_data%river_distance
+rivers%river_elevation    => rivers_data%river_elevation
+rivers%river_length       => rivers_data%river_length
+rivers%river_manning      => rivers_data%river_manning
+rivers%mean_sea_level     => rivers_data%mean_sea_level
+rivers%sea_level          => rivers_data%sea_level
+rivers%sea_level_lp       => rivers_data%sea_level_lp
+! CaMa-Flood prognostic variables.
+rivers%flood_flow         => rivers_data%flood_flow
+rivers%flood_flow_prev    => rivers_data%flood_flow_prev
+rivers%flood_storage      => rivers_data%flood_storage
+rivers%flood_storage_prev => rivers_data%flood_storage_prev
+rivers%river_channel_flow => rivers_data%river_channel_flow
+rivers%river_channel_storage => rivers_data%river_channel_storage
+rivers%river_depth_prev   => rivers_data%river_depth_prev
+rivers%river_flow_prev    => rivers_data%river_flow_prev
+! CaMa-Flood diagnostic variables.
+rivers%river_depth        => rivers_data%river_depth
 
 ! RFM variables.
 rivers%rfm_flowobs1_rp => rivers_data%rfm_flowobs1_rp
@@ -2104,24 +2099,24 @@ rivers%rfm_substore_rp => rivers_data%rfm_substore_rp
 rivers%rfm_surfstore_rp => rivers_data%rfm_surfstore_rp
 
 ! TRIP variables.
-!!rivers%rivers_seq_rp => rivers_data%rivers_seq_rp
+rivers%rivers_seq_rp => rivers_data%rivers_seq_rp
 rivers%rivers_sto_rp => rivers_data%rivers_sto_rp
 
-!!! Coupling variables.
-!!rivers%rivers_outflow_number_rp => rivers_data%rivers_outflow_number_rp
-!!rivers%sub_surf_roff_rp => rivers_data%sub_surf_roff_rp
-!!rivers%surf_roff_rp => rivers_data%surf_roff_rp
-!!
-!!! Minor reservoir variables.
-!!rivers%minor_res_capacity      => rivers_data%minor_res_capacity
-!!rivers%minor_res_frac          => rivers_data%minor_res_frac
-!!rivers%minor_res_storage       => rivers_data%minor_res_storage
-!!rivers%tot_abstracted_minor_res_global                                         &
-!!                               => rivers_data%tot_abstracted_minor_res_global
-!!
-!!! Further variables to couple to water resources.
-!!rivers%tot_net_abstracted_river_global                                         &
-!!                               => rivers_data%tot_net_abstracted_river_global
+! Coupling variables.
+rivers%rivers_outflow_number_rp => rivers_data%rivers_outflow_number_rp
+rivers%sub_surf_roff_rp => rivers_data%sub_surf_roff_rp
+rivers%surf_roff_rp => rivers_data%surf_roff_rp
+
+! Minor reservoir variables.
+rivers%minor_res_capacity      => rivers_data%minor_res_capacity
+rivers%minor_res_frac          => rivers_data%minor_res_frac
+rivers%minor_res_storage       => rivers_data%minor_res_storage
+rivers%tot_abstracted_minor_res_global                                         &
+                               => rivers_data%tot_abstracted_minor_res_global
+
+! Further variables to couple to water resources.
+rivers%tot_net_abstracted_river_global                                         &
+                               => rivers_data%tot_net_abstracted_river_global
 
 RETURN
 END SUBROUTINE jules_rivers_alloc_rp
@@ -2159,6 +2154,7 @@ INTEGER :: ip
 CHARACTER(LEN=*), PARAMETER :: RoutineName='CALC_OUTFLOW_PER_RIVER'
 
 outflow_per_river(:) = 0.0
+! This might need is_master_task
 DO ip = 1, np_rivers
   IF (rivers%rivers_outflow_number_rp(ip) > 0) THEN
     outflow_per_river(rivers%rivers_outflow_number_rp(ip)) =                   &

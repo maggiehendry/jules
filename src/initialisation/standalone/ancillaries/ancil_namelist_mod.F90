@@ -583,7 +583,9 @@ SUBROUTINE set_constant_vars( nvars, nvars_const, nvars_max, const_val,        &
 ! Description:
 !   Set variables that are using a constant value.
 
-USE model_interface_mod, ONLY: identifier_len, populate_var, get_var_id
+USE model_interface_mod, ONLY: identifier_len, get_var_id
+
+USE populate_var_mod, ONLY: populate_var
 
 IMPLICIT NONE
 

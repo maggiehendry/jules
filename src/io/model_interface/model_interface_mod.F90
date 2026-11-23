@@ -218,7 +218,7 @@ PUBLIC                                                                         &
 ! Variable inquiry routines
     get_var_levs_dims, get_var_attrs,                                          &
 ! Routines for getting and setting values
-    extract_var, populate_var,                                                 &
+    extract_var,                                                               &
 ! Routine to check metadata
     check_variable_metadata,                                                   &
 ! Routine to check whether a variable is on the river grid
@@ -238,10 +238,8 @@ CONTAINS
 #include "get_var_levs_dims.inc"
 #include "get_var_attrs.inc"
 #include "extract_var.inc"
-#include "populate_var.inc"
 #include "is_river_var.inc"
 
-#include "map_to_land.inc"
 #include "map_from_land.inc"
 
 END MODULE model_interface_mod

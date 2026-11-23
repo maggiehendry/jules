@@ -19,7 +19,9 @@ USE missing_data_mod, ONLY:                                                    &
 !  imported scalar parameters
      imdi, rmdi
 
-USE model_interface_mod, ONLY: populate_var, get_var_id
+USE model_interface_mod, ONLY: get_var_id
+
+USE populate_var_mod, ONLY: populate_var
 
 USE logging_mod, ONLY: log_info, log_warn, log_fatal
 

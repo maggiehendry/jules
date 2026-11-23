@@ -22,7 +22,9 @@ USE dictionary_mod, ONLY: dict, dict_create, dict_get, dict_set,               &
 
 USE data_cube_mod, ONLY: data_cube, cube_free
 
-USE model_interface_mod, ONLY: get_var_id, get_var_levs_dims, populate_var
+USE model_interface_mod, ONLY: get_var_id, get_var_levs_dims
+
+USE populate_var_mod, ONLY: populate_var
 
 USE file_gridded_mod, ONLY: file_gridded, file_gridded_open,                   &
                              file_gridded_def_grid, file_gridded_def_dim,      &

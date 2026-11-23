@@ -116,15 +116,17 @@ USE jules_overbank_props_mod, ONLY: allocate_overbank_vars_rp
 
 USE jules_rivers_props_mod, ONLY: direction_grid, grid_riv_pt_number,          &
                                   nextx_grid, nexty_grid, river_mask,          &
-                                  l_calc_rivers_length
+                                  river_nextx_grid, river_nexty_grid,          &
+                                  l_calc_rivers_length, rivers_xgrid,          &
+                                  rivers_ygrid, land_fraction_2d, rivers_dir,  &
+                                  rivers_outflow_number, rivers_storage
 
 USE jules_model_environment_mod, ONLY: l_oasis_rivers
 
 USE jules_rivers_mod, ONLY:                                                    &
   l_riv_overbank, l_trivial_mapping, np_rivers, nx_rivers, ny_rivers,          &
-  rivers_dx, rivers_dy, rivers_length, river_nextx_grid, river_nexty_grid,     &
-  rivers_reglatlon, rivers_regrid, rivers_x1, rivers_y1, l_outflow_per_river,  &
-  l_init_storage,                                                              &
+  rivers_dx, rivers_dy, rivers_length, rivers_reglatlon, rivers_regrid,        &
+  rivers_x1, rivers_y1, l_outflow_per_river, l_init_storage,                   &
   ! types
   rivers_data_type, rivers_type,                                               &
   ! subroutines
@@ -268,7 +270,7 @@ IF ( is_master_task() ) THEN
   ! Process coordinates and establish the extent of the river domain.
   !----------------------------------------------------------------------------
   CALL process_rivers_coords( global_proj_x_land, global_proj_y_land,          &
-             rivers%rivers_ygrid, rivers%rivers_xgrid, rivers_dx, rivers_dy,   &
+             rivers_ygrid, rivers_xgrid, rivers_dx, rivers_dy,                 &
              rivers_x1, rivers_x1_input, rivers_y1, l_shift_x, l_cyclic_x,     &
              l_reverse_y, rivers_reglatlon, rivers%global_land_index,          &
              global_proj_x_land_work, river_xbound, river_ybound )
@@ -278,7 +280,7 @@ IF ( is_master_task() ) THEN
   ! We have already checked that the two grids have the same size.
   !----------------------------------------------------------------------------
   IF ( l_use_land_fraction ) THEN
-    rivers%land_fraction_2d(:,:) = flandg(:,:)
+    land_fraction_2d(:,:) = flandg(:,:)
   END IF
 
   !----------------------------------------------------------------------------
@@ -287,14 +289,14 @@ IF ( is_master_task() ) THEN
   !----------------------------------------------------------------------------
   IF ( l_shift_x .OR. l_reverse_y ) THEN
     CALL remap_ancil_control( nx_rivers, ny_rivers, rivers_dx, l_shift_x,      &
-                              l_reverse_y, rivers, l_use_land_fraction )
+                              l_reverse_y, l_use_land_fraction )
   END IF
 
   !----------------------------------------------------------------------------
   ! Convert the flow direction field into nextx and nexty fields.
   !----------------------------------------------------------------------------
   CALL process_direction_fields( l_cyclic_x, l_use_direction,                  &
-                                 rivers%rivers_dir, direction_grid,            &
+                                 rivers_dir, direction_grid,            &
                                  river_nextx_grid, river_nexty_grid,           &
                                  nextx_grid, nexty_grid, river_mask )
 
@@ -324,7 +326,7 @@ IF ( is_master_task() ) THEN
   !----------------------------------------------------------------------------
   ! Establish the number and locations of river points.
   !----------------------------------------------------------------------------
-  CALL find_river_points( rivers%rivers_xgrid, rivers%rivers_ygrid,            &
+  CALL find_river_points( rivers_xgrid, rivers_ygrid,            &
                           river_xbound, river_ybound, nextx_grid, nexty_grid,  &
                           river_mask, np_rivers )
 
@@ -366,8 +368,8 @@ IF ( is_master_task() ) THEN
   !----------------------------------------------------------------------------
   IF ( l_outflow_per_river .OR. l_init_storage ) THEN
     CALL check_ancil_rivers( dir_mouth, dir_inland_drainage,                   &
-                             direction_grid, rivers%rivers_outflow_number,     &
-                             rivers%rivers_storage, rivers%land_fraction_2d )
+                             direction_grid, rivers_outflow_number,     &
+                             rivers_storage, land_fraction_2d )
   END IF
 
 END IF  ! is_master
@@ -939,15 +941,13 @@ END SUBROUTINE process_rivers_coords
 !##############################################################################
 
 SUBROUTINE remap_ancil_control( nx_rivers, ny_rivers, rivers_dx, l_shift_x,    &
-                                l_reverse_y, rivers, l_use_land_fraction )
+                                l_reverse_y, l_use_land_fraction )
 
 !------------------------------------------------------------------------------
 ! Description:
 !   Controls the transfer of ancillary fields from the river input grid to the
 !   river grid.
 !------------------------------------------------------------------------------
-
-USE jules_rivers_mod, ONLY: rivers_type
 
 USE jules_rivers_props_mod, ONLY: nvars, var
 
@@ -980,11 +980,6 @@ LOGICAL, INTENT(IN) ::                                                         &
 
 
 !------------------------------------------------------------------------------
-! Type arguments with INTENT(IN OUT)
-!------------------------------------------------------------------------------
-TYPE(rivers_type), INTENT(IN OUT) :: rivers
-
-!------------------------------------------------------------------------------
 ! Local scalar variables.
 !------------------------------------------------------------------------------
 INTEGER :: ivar  !  Loop counter.
@@ -998,7 +993,7 @@ INTEGER :: ivar  !  Loop counter.
 ! Loop through specified fields.
 DO ivar = 1, nvars
   CALL remap_ancil( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    var(ivar), rivers )
+                    var(ivar) )
 END DO
 
 !------------------------------------------------------------------------------
@@ -1006,7 +1001,7 @@ END DO
 !------------------------------------------------------------------------------
 IF ( l_use_land_fraction ) THEN
   CALL remap_ancil( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    'land_fraction_2d', rivers )
+                    'land_fraction_2d' )
 END IF
 
 !------------------------------------------------------------------------------
@@ -1016,12 +1011,12 @@ END IF
 !------------------------------------------------------------------------------
 IF ( l_shift_x ) THEN
   CALL remap_ancil( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    'rivers_xgrid', rivers )
+                    'rivers_xgrid' )
 END IF
 
 IF ( l_reverse_y ) THEN
   CALL remap_ancil( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    'rivers_ygrid', rivers )
+                    'rivers_ygrid' )
 END IF
 
 RETURN
@@ -1030,7 +1025,7 @@ END SUBROUTINE remap_ancil_control
 !##############################################################################
 
 SUBROUTINE remap_ancil( nx_rivers, ny_rivers, rivers_dx,                       &
-                        l_shift_x, l_reverse_y, var, rivers )
+                        l_shift_x, l_reverse_y, var )
 
 !------------------------------------------------------------------------------
 ! Description:
@@ -1038,11 +1033,13 @@ SUBROUTINE remap_ancil( nx_rivers, ny_rivers, rivers_dx,                       &
 !   river input grid to the river grid.
 !------------------------------------------------------------------------------
 
-USE jules_rivers_mod, ONLY:                                                    &
+USE jules_rivers_props_mod, ONLY:                                              &
   channel_depth_grid, channel_width_grid, mean_sea_level_grid,                 &
   minor_res_capacity_grid, minor_res_frac_grid, river_distance_grid,           &
   river_elevation_grid, river_elevation_grid, river_length_grid,               &
-  river_manning_grid, river_nextx_grid, river_nexty_grid, rivers_type
+  river_manning_grid, river_nextx_grid, river_nexty_grid, rivers_xgrid,        &
+  rivers_ygrid, rivers_lat2d, rivers_lon2d, rivers_dra, rivers_dir,            &
+  rivers_seq, rivers_outflow_number, rivers_storage, land_fraction_2d
 
 USE overbank_inundation_mod, ONLY:                                             &
   hypsometric_quantiles_grid, logn_mean, logn_stdev, nquantile_hypso
@@ -1071,11 +1068,6 @@ CHARACTER(LEN=*), INTENT(IN) :: var
     ! The name of a variable.
 
 !------------------------------------------------------------------------------
-! Type arguments with INTENT(IN OUT)
-!------------------------------------------------------------------------------
-TYPE(rivers_type), INTENT(IN OUT) :: rivers
-
-!------------------------------------------------------------------------------
 ! Local parameters.
 !------------------------------------------------------------------------------
 CHARACTER(LEN=*), PARAMETER :: RoutineName = 'REMAP_ANCIL'
@@ -1100,73 +1092,73 @@ SELECT CASE ( var )
   !----------------------------------------------------------------------------
 CASE ( 'area' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, rivers%rivers_dra )
+                    rivers_xgrid, rivers_dra )
 
 CASE ( 'channel_depth_grid' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, channel_depth_grid )
+                    rivers_xgrid, channel_depth_grid )
 
 CASE ( 'channel_width_grid' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, channel_width_grid )
+                    rivers_xgrid, channel_width_grid )
 
 CASE ( 'direction' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, rivers%rivers_dir )
+                    rivers_xgrid, rivers_dir )
 
 CASE ( 'latitude_2d' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, rivers%rivers_lat2d )
+                    rivers_xgrid, rivers_lat2d )
 
 CASE ( 'longitude_2d' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, rivers%rivers_lon2d )
+                    rivers_xgrid, rivers_lon2d )
 
 CASE ( 'mean_sea_level' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, mean_sea_level_grid )
+                    rivers_xgrid, mean_sea_level_grid )
 
 CASE ( 'river_distance_grid' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, river_distance_grid )
+                    rivers_xgrid, river_distance_grid )
 
 CASE ( 'river_elevation_grid' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, river_elevation_grid )
+                    rivers_xgrid, river_elevation_grid )
 
 CASE ( 'river_length_grid' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, river_length_grid )
+                    rivers_xgrid, river_length_grid )
 
 CASE ( 'river_manning_grid' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, river_manning_grid )
+                    rivers_xgrid, river_manning_grid )
 
 CASE ( 'river_nextx_grid' )
   ! Note that we use is_x_index_arg to indicate that this is an index field.
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, river_nextx_grid,                     &
+                    rivers_xgrid, river_nextx_grid,                     &
                     is_x_index_arg = .TRUE. )
 
 CASE ( 'river_nexty_grid' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, river_nexty_grid )
+                    rivers_xgrid, river_nexty_grid )
 
 CASE ( 'rivers_outflow_number' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, rivers%rivers_outflow_number )
+                    rivers_xgrid, rivers_outflow_number )
 
 CASE ( 'rivers_storage' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, rivers%rivers_storage )
+                    rivers_xgrid, rivers_storage )
 
 CASE ( 'land_fraction_2d' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, rivers%land_fraction_2d )
+                    rivers_xgrid, land_fraction_2d )
 
 CASE ( 'sequence' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, rivers%rivers_seq )
+                    rivers_xgrid, rivers_seq )
 
   !----------------------------------------------------------------------------
   ! Cases for river overbank inundation variables.
@@ -1175,27 +1167,27 @@ CASE ( 'hypso_quantiles_grid' )
   ! Loop over quantiles.
   DO i = 1, nquantile_hypso
     CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y, &
-                      rivers%rivers_xgrid, hypsometric_quantiles_grid(:,:,i) )
+                      rivers_xgrid, hypsometric_quantiles_grid(:,:,i) )
   END DO
 
 CASE ( 'logn_mean' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, logn_mean )
+                    rivers_xgrid, logn_mean )
 
 CASE ( 'logn_stdev' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, logn_stdev )
+                    rivers_xgrid, logn_stdev )
 
   !----------------------------------------------------------------------------
   ! Cases for minor reservoir variables.
   !----------------------------------------------------------------------------
 CASE ( 'minor_res_capacity_grid' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, minor_res_capacity_grid )
+                    rivers_xgrid, minor_res_capacity_grid )
 
 CASE ( 'minor_res_frac_grid' )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, minor_res_frac_grid )
+                    rivers_xgrid, minor_res_frac_grid )
 
   !----------------------------------------------------------------------------
   ! Cases for the 1-D coordinate variables.
@@ -1204,19 +1196,19 @@ CASE ( 'minor_res_frac_grid' )
   !----------------------------------------------------------------------------
 CASE ( 'rivers_xgrid' )
   ! Create a 2D field by copying the 1D xgrid.
-  tmp_2d_coord = SPREAD( rivers%rivers_xgrid, 2, ny_rivers )
+  tmp_2d_coord = SPREAD( rivers_xgrid, 2, ny_rivers )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, tmp_2d_coord )
+                    rivers_xgrid, tmp_2d_coord )
   ! Extract the first row from the 2D field.
-  rivers%rivers_xgrid(:) = tmp_2d_coord(:,1)
+  rivers_xgrid(:) = tmp_2d_coord(:,1)
 
 CASE ( 'rivers_ygrid' )
   ! Create a 2D field by copying the 1D ygrid.
-  tmp_2d_coord = SPREAD( rivers%rivers_ygrid, 1, nx_rivers )
+  tmp_2d_coord = SPREAD( rivers_ygrid, 1, nx_rivers )
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers%rivers_xgrid, tmp_2d_coord )
+                    rivers_xgrid, tmp_2d_coord )
   ! Extract the first column from the 2D field.
-  rivers%rivers_ygrid(:) = tmp_2d_coord(1,:)
+  rivers_ygrid(:) = tmp_2d_coord(1,:)
 
 CASE DEFAULT
   CALL log_fatal( RoutineName,                                                 &
@@ -2238,18 +2230,19 @@ SUBROUTINE set_river_point_values( rivers_x1_input,                            &
 USE jules_model_environment_mod, ONLY: l_oasis_rivers
 
 USE jules_rivers_mod, ONLY:                                                    &
-  a_thresh, channel_depth_grid, channel_width_grid, i_river_vn,                &
-  l_minor_reservoirs, l_sea_level, l_riv_overbank,                             &
-  mean_sea_level_grid, minor_res_capacity_grid, minor_res_frac_grid,           &
+  a_thresh, i_river_vn, l_minor_reservoirs, l_sea_level, l_riv_overbank,       &
   np_rivers, nseqmax, nx_rivers, ny_rivers, rfm_land, rfm_river,               &
-  rivers_camaflood, river_distance_grid,                                       &
-  rivers_dx, rivers_dy, river_elevation_grid, river_length_grid,               &
-  river_manning_grid, rivers_rfm, rivers_trip, rivers_x1, l_outflow_per_river, &
-  l_init_storage,                                                              &
+  rivers_trip, rivers_rfm, rivers_camaflood, rivers_dx, rivers_dy, rivers_x1,  &
+  l_outflow_per_river, l_init_storage,                                         &
   ! types
   rivers_type
 
-USE jules_rivers_props_mod, ONLY: l_use_area
+USE jules_rivers_props_mod, ONLY:                                              &
+  l_use_area, channel_depth_grid, channel_width_grid, mean_sea_level_grid,     &
+  minor_res_capacity_grid, minor_res_frac_grid, river_distance_grid,           &
+  river_elevation_grid, river_length_grid, river_manning_grid, rivers_xgrid,   &
+  rivers_ygrid, rivers_lon2d, rivers_lat2d, rivers_dra, rivers_seq,            &
+  rivers_storage, rivers_outflow_number, land_fraction_2d
 
 USE model_grid_mod, ONLY: l_coord_latlon
 
@@ -2336,7 +2329,7 @@ LOGICAL ::                                                                     &
 ! Initialise irx so that the first increment will take us to the first column
 ! in the river input grid - essentially we are locating rivers_x1_input in the
 ! river grid.
-irx = NINT( (rivers_x1_input - rivers%rivers_xgrid(1)) / rivers_dx )
+irx = NINT( (rivers_x1_input - rivers_xgrid(1)) / rivers_dx )
 
 ! For now we use ix and iy to scan across a full-sized grid. We calculate irx
 ! and iry to match the old scan order, and load grid value at (irx,iry) into
@@ -2362,8 +2355,8 @@ DO ix = 1,nx_rivers
     ! a file (and the river input and river grids are identical) and there is
     ! nothing to do here.
     IF ( l_coord_latlon ) THEN
-      rivers%rivers_lat2d(irx,iry) = rivers%rivers_ygrid(iry)
-      rivers%rivers_lon2d(irx,iry) = rivers%rivers_xgrid(irx)
+      rivers_lat2d(irx,iry) = rivers_ygrid(iry)
+      rivers_lon2d(irx,iry) = rivers_xgrid(irx)
     END IF
 
     !--------------------------------------------------------------------------
@@ -2401,10 +2394,10 @@ DO ix = 1,nx_rivers
       ! Set river vector information based on 2D input ancillaries.
       ! First, coordinates and flow direction.
       !------------------------------------------------------------------------
-      rivers%rivers_lon_rp(ip)     = rivers%rivers_lon2d(irx,iry)
-      rivers%rivers_lat_rp(ip)     = rivers%rivers_lat2d(irx,iry)
-      rivers%rivers_x_coord_rp(ip) = rivers%rivers_xgrid(irx)
-      rivers%rivers_y_coord_rp(ip) = rivers%rivers_ygrid(iry)
+      rivers%rivers_lon_rp(ip)     = rivers_lon2d(irx,iry)
+      rivers%rivers_lat_rp(ip)     = rivers_lat2d(irx,iry)
+      rivers%rivers_x_coord_rp(ip) = rivers_xgrid(irx)
+      rivers%rivers_y_coord_rp(ip) = rivers_ygrid(iry)
 
       !------------------------------------------------------------------------
       ! Set values that depend on the chosen river model.
@@ -2429,7 +2422,7 @@ DO ix = 1,nx_rivers
         !----------------------------------------------------------------------
         IF ( l_use_area ) THEN
           ! Set drainage area from ancillary.
-          rivers%rfm_iarea_rp(ip) = NINT( rivers%rivers_dra(irx,iry) )
+          rivers%rfm_iarea_rp(ip) = NINT( rivers_dra(irx,iry) )
         ELSE
           ! Ancillary not present. Set area above threshold, so that all
           ! points will be identified as rivers.
@@ -2446,12 +2439,12 @@ DO ix = 1,nx_rivers
         !----------------------------------------------------------------------
         ! TRIP variables.
         !----------------------------------------------------------------------
-        rivers%rivers_seq_rp(ip) = NINT(rivers%rivers_seq(irx,iry))
+        rivers%rivers_seq_rp(ip) = NINT(rivers_seq(irx,iry))
         IF ( rivers%rivers_seq_rp(ip) > nseqmax ) THEN
           nseqmax = rivers%rivers_seq_rp(ip)
         END IF
         IF ( l_init_storage ) THEN
-          rivers%rivers_sto_rp(ip) = rivers%rivers_storage(irx,iry)
+          rivers%rivers_sto_rp(ip) = rivers_storage(irx,iry)
         END IF
 
       END IF  !  i_river_vn
@@ -2461,7 +2454,7 @@ DO ix = 1,nx_rivers
       !------------------------------------------------------------------------
       IF ( l_outflow_per_river ) THEN
         rivers%rivers_outflow_number_rp(ip) =                                  &
-                                    NINT(rivers%rivers_outflow_number(irx,iry))
+                                    NINT(rivers_outflow_number(irx,iry))
       END IF
 
       !------------------------------------------------------------------------
@@ -2469,7 +2462,7 @@ DO ix = 1,nx_rivers
       ! the rivers grid and test whether the model is using fractional land.
       !------------------------------------------------------------------------
       IF ( l_use_land_fraction ) THEN
-        rivers%land_fraction_rp(ip) = rivers%land_fraction_2d(ix,iy)
+        rivers%land_fraction_rp(ip) = land_fraction_2d(ix,iy)
       END IF
 
       !------------------------------------------------------------------------

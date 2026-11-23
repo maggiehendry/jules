@@ -59,7 +59,7 @@ USE jules_rivers_props_mod, ONLY:                                              &
    deallocate_river_props,                                                     &
    nvars_max, nvars, var, read_list, FILE, const_val, use_file, tpl_name,      &
    var_name, l_use_area, nx_rivers, ny_rivers, file_name_coords,               &
-   x_dim_name, y_dim_name, is_climatology
+   x_dim_name, y_dim_name, is_climatology, rivers_xgrid, rivers_ygrid
 
 USE jules_water_resources_mod, ONLY:                                           &
   l_water_resources
@@ -352,8 +352,7 @@ IF ( is_master_task() ) THEN
   ! Read y dimension from file.
   od_grid = grid_create( grid_is_1d = .TRUE.,                                  &
                          dim_name = TRIM(y_dim_name), npoints = ny_rivers )
-  ALLOCATE(rivers_data%rivers_ygrid(ny_rivers), STAT = ERROR)
-  rivers%rivers_ygrid => rivers_data%rivers_ygrid
+  ALLOCATE(rivers_ygrid(ny_rivers), STAT = ERROR)
   CALL fill_variables_from_file(file_name_coords,                              &
                                 [ 'rivers_ygrid' ],[ TRIM(y_dim_name) ],       &
                                 is_climatology = [ .FALSE. ])
@@ -361,8 +360,7 @@ IF ( is_master_task() ) THEN
   ! Read x dimension from file.
   od_grid = grid_create( grid_is_1d = .TRUE.,                                  &
                          dim_name = TRIM(x_dim_name), npoints = nx_rivers)
-  ALLOCATE(rivers_data%rivers_xgrid(nx_rivers), STAT = ERROR)
-  rivers%rivers_xgrid => rivers_data%rivers_xgrid
+  ALLOCATE(rivers_xgrid(nx_rivers), STAT = ERROR)
   CALL fill_variables_from_file(file_name_coords,                              &
                                 [ 'rivers_xgrid' ],[ TRIM(x_dim_name) ],       &
                                 is_climatology = [ .FALSE. ])

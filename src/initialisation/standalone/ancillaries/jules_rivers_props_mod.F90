@@ -158,6 +158,79 @@ INTEGER, ALLOCATABLE :: river_mask(:,:)
 CHARACTER(LEN=max_file_name_len) :: file_name_coords
     ! The name of the file to be used to read coordinate values from.
 
+!------------------------------------------------------------------------------
+! Declarations of ancillary variables. These variables are only used
+! during initialisation of standalone runs.
+!------------------------------------------------------------------------------
+! Grid index variables.
+!------------------------------------------------------------------------------
+REAL(KIND=real_jlslsm), ALLOCATABLE :: river_nextx_grid(:,:)
+   ! x index of next downstream point.
+REAL(KIND=real_jlslsm), ALLOCATABLE :: river_nexty_grid(:,:)
+   ! y index of next downstream point.
+
+! Arrays defined on 1d river points vectors
+REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_xgrid(:)
+                          ! Coordinate values for x-dimension of rivers grid
+REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_ygrid(:)
+                          ! Coordinate values for y-dimension of rivers grid
+
+!------------------------------------------------------------------------------
+! Ancillary arrays defined on full 2D rivers grid.
+!------------------------------------------------------------------------------
+REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_seq(:,:)
+                          ! TRIP - River routing pathway sequence
+REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_dir(:,:)
+                          ! River routing direction index
+REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_dra(:,:)
+                          ! RFM - Catchment area draining to a grid cell
+                          !    (no. of grid cells)
+REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_lat2d(:,:)
+                          ! Full 2D latitude field
+REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_lon2d(:,:)
+                          ! Full 2D longitude field
+REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_outflow_number(:,:)
+                          ! Maps ocean outflow gridboxes to the river they
+                          !    belong to (on rivers grid)
+                          ! Used for coupling to ocean model
+REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_storage(:,:)
+                          ! Initial river storage (kg) values on 2D grid
+                          ! Required to allow River storage to be initialised
+                          ! from an ancillary on the 2d Rivers grid.
+                          ! The ancillary can either be for a single time or
+                          ! a 12-month climatology
+REAL(KIND=real_jlslsm), ALLOCATABLE :: land_fraction_2d(:,:)
+                          ! Land fraction on global 2D grid
+
+!------------------------------------------------------------------------------
+! Ancillary arrays for CaMa-Flood, defined on 2D rivers grid.
+!------------------------------------------------------------------------------
+REAL(KIND=real_jlslsm), ALLOCATABLE ::                                         &
+  channel_depth_grid(:,:),                                                     &
+     ! River channel depth (to bankfull level) (m).
+  channel_width_grid(:,:),                                                     &
+     ! River channel width (at bankfull level) (m).
+  mean_sea_level_grid(:,:),                                                    &
+     ! Mean sea level elevation at river mouth, relative to top of river
+     ! channel (m). Only values at river mouths are used.
+  river_distance_grid(:,:),                                                    &
+     ! Distance to next downstream gridpoint (m).
+  river_elevation_grid(:,:),                                                   &
+     ! Elevation of top of river channel (m).
+  river_length_grid(:,:),                                                      &
+     ! Length of river reach (m).
+  river_manning_grid(:,:)
+     ! Manning roughness coefficient for river channel (1).
+
+!------------------------------------------------------------------------------
+! Ancillary arrays for minor reservoirs, defined on 2D rivers grid.
+!------------------------------------------------------------------------------
+REAL(KIND=real_jlslsm), ALLOCATABLE ::                                         &
+  minor_res_capacity_grid(:,:),                                                &
+     ! Storage capacity of minor reservoirs (kg).
+  minor_res_frac_grid(:,:)
+    ! Catchment area of minor reservoirs as fraction of area.
+
 CONTAINS
 
 !##############################################################################
@@ -391,14 +464,9 @@ SUBROUTINE allocate_river_vars_grid( global_land_pts, nx_rivers, ny_rivers,    &
 !   pointers.
 !------------------------------------------------------------------------------
 
-USE jules_rivers_mod, ONLY: channel_depth_grid, channel_width_grid, i_river_vn,&
-                            l_minor_reservoirs, l_sea_level,                   &
-                            mean_sea_level_grid, minor_res_capacity_grid,      &
-                            minor_res_frac_grid, rivers_camaflood,             &
-                            river_distance_grid, river_elevation_grid,         &
-                            river_length_grid, river_manning_grid,             &
-                            river_nextx_grid, river_nexty_grid, rivers_rfm,    &
-                            rivers_trip, rivers_data_type, rivers_type,        &
+USE jules_rivers_mod, ONLY: i_river_vn, l_minor_reservoirs, l_sea_level,       &
+                            rivers_trip, rivers_rfm, rivers_camaflood,         &
+                            rivers_data_type, rivers_type,                     &
                             l_outflow_per_river, l_init_storage
 
 IMPLICIT NONE
@@ -449,9 +517,9 @@ ALLOCATE( nexty_grid(nx_rivers, ny_rivers), STAT = ERROR )
 error_sum = error_sum + ERROR
 ALLOCATE( river_mask(nx_rivers,ny_rivers), STAT = ERROR )
 error_sum = error_sum + ERROR
-ALLOCATE( rivers_data%rivers_lat2d(nx_rivers, ny_rivers), STAT = ERROR )
+ALLOCATE( rivers_lat2d(nx_rivers, ny_rivers), STAT = ERROR )
 error_sum = error_sum + ERROR
-ALLOCATE( rivers_data%rivers_lon2d(nx_rivers, ny_rivers), STAT = ERROR )
+ALLOCATE( rivers_lon2d(nx_rivers, ny_rivers), STAT = ERROR )
 error_sum = error_sum + ERROR
 
 ! A remapping variable.
@@ -466,7 +534,7 @@ ELSE
   nx_size = 1
   ny_size = 1
 END IF
-ALLOCATE( rivers_data%rivers_dir(nx_size, ny_size), STAT = ERROR )
+ALLOCATE( rivers_dir(nx_size, ny_size), STAT = ERROR )
 error_sum = error_sum + ERROR
 ALLOCATE( direction_grid(nx_size, ny_size), STAT = ERROR )
 error_sum = error_sum + ERROR
@@ -506,7 +574,7 @@ ALLOCATE( river_length_grid(nx_size, ny_size), STAT = ERROR )
 error_sum = error_sum + ERROR
 ALLOCATE( river_manning_grid(nx_size, ny_size), STAT = ERROR )
 error_sum = error_sum + ERROR
-ALLOCATE( rivers_data%land_fraction_2d(nx_rivers, ny_rivers), STAT = ERROR )
+ALLOCATE( land_fraction_2d(nx_rivers, ny_rivers), STAT = ERROR )
 error_sum = error_sum + ERROR
 
 ! CaMa-Flood variables that depend on a further switch.
@@ -528,7 +596,7 @@ ELSE
   nx_size = 1
   ny_size = 1
 END IF
-ALLOCATE( rivers_data%rivers_dra(nx_size,ny_size), STAT = ERROR )
+ALLOCATE( rivers_dra(nx_size,ny_size), STAT = ERROR )
 error_sum = error_sum + ERROR
 
 ! TRIP variables.
@@ -539,7 +607,7 @@ ELSE
   nx_size = 1
   ny_size = 1
 END IF
-ALLOCATE( rivers_data%rivers_seq(nx_size,ny_size), STAT = ERROR )
+ALLOCATE( rivers_seq(nx_size,ny_size), STAT = ERROR )
 error_sum = error_sum + ERROR
 
 ! River coupling variables.
@@ -550,7 +618,7 @@ ELSE
   nx_size = 1
   ny_size = 1
 END IF
-ALLOCATE( rivers_data%rivers_outflow_number(nx_size,ny_size), STAT = ERROR )
+ALLOCATE( rivers_outflow_number(nx_size,ny_size), STAT = ERROR )
 error_sum = error_sum + ERROR
 
 ! River storage.
@@ -561,7 +629,7 @@ ELSE
   nx_size = 1
   ny_size = 1
 END IF
-ALLOCATE( rivers_data%rivers_storage(nx_size,ny_size), STAT = ERROR )
+ALLOCATE( rivers_storage(nx_size,ny_size), STAT = ERROR )
 error_sum = error_sum + ERROR
 
 ! Minor reservoir 2D ancillary variables.
@@ -582,41 +650,33 @@ IF ( error_sum /= 0 ) THEN
 END IF
 
 ! Initialise to missing data.
-grid_riv_pt_number(:,:)                = imdi
-nextx_grid(:,:)                        = imdi
-nexty_grid(:,:)                        = imdi
-river_mask(:,:)                        = imdi
-rivers_data%rivers_lat2d(:,:)          = rmdi
-rivers_data%rivers_lon2d(:,:)          = rmdi
-rivers_data%global_land_index(:)       = imdi
-rivers_data%rivers_dir(:,:)            = rmdi
-direction_grid(:,:)                    = imdi
-river_nextx_grid(:,:)                  = rmdi
-river_nexty_grid(:,:)                  = rmdi
-channel_depth_grid(:,:)                = rmdi
-channel_width_grid(:,:)                = rmdi
-river_distance_grid(:,:)               = rmdi
-river_elevation_grid(:,:)              = rmdi
-river_length_grid(:,:)                 = rmdi
-river_manning_grid(:,:)                = rmdi
-rivers_data%rivers_dra(:,:)            = rmdi
-rivers_data%rivers_seq(:,:)            = rmdi
-rivers_data%rivers_outflow_number(:,:) = rmdi
-rivers_data%rivers_storage(:,:)        = rmdi
-rivers_data%land_fraction_2d(:,:) = rmdi
-minor_res_capacity_grid(:,:)  = rmdi
-minor_res_frac_grid(:,:)  = rmdi
+grid_riv_pt_number(:,:)          = imdi
+nextx_grid(:,:)                  = imdi
+nexty_grid(:,:)                  = imdi
+river_mask(:,:)                  = imdi
+rivers_lat2d(:,:)                = rmdi
+rivers_lon2d(:,:)                = rmdi
+rivers_data%global_land_index(:) = imdi
+rivers_dir(:,:)                  = rmdi
+direction_grid(:,:)              = imdi
+river_nextx_grid(:,:)            = rmdi
+river_nexty_grid(:,:)            = rmdi
+channel_depth_grid(:,:)          = rmdi
+channel_width_grid(:,:)          = rmdi
+river_distance_grid(:,:)         = rmdi
+river_elevation_grid(:,:)        = rmdi
+river_length_grid(:,:)           = rmdi
+river_manning_grid(:,:)          = rmdi
+rivers_dra(:,:)                  = rmdi
+rivers_seq(:,:)                  = rmdi
+rivers_outflow_number(:,:)       = rmdi
+rivers_storage(:,:)              = rmdi
+land_fraction_2d(:,:)            = rmdi
+minor_res_capacity_grid(:,:)     = rmdi
+minor_res_frac_grid(:,:)         = rmdi
 
 ! Associate pointers
-rivers%rivers_dir        => rivers_data%rivers_dir
-rivers%rivers_lat2d      => rivers_data%rivers_lat2d
-rivers%rivers_lon2d      => rivers_data%rivers_lon2d
 rivers%global_land_index => rivers_data%global_land_index
-rivers%rivers_dra        => rivers_data%rivers_dra
-rivers%rivers_seq        => rivers_data%rivers_seq
-rivers%rivers_outflow_number => rivers_data%rivers_outflow_number
-rivers%rivers_storage    => rivers_data%rivers_storage
-rivers%land_fraction_2d  => rivers_data%land_fraction_2d
 
 RETURN
 END SUBROUTINE allocate_river_vars_grid
@@ -629,11 +689,6 @@ SUBROUTINE deallocate_river_props( )
 ! Description:
 !   Deallocate river variables that are not needed any further.
 !------------------------------------------------------------------------------
-
-USE jules_rivers_mod, ONLY:                                                    &
-  channel_depth_grid, channel_width_grid, minor_res_capacity_grid,             &
-  minor_res_frac_grid, river_distance_grid, river_elevation_grid,              &
-  river_length_grid, river_manning_grid, river_nextx_grid, river_nexty_grid
 
 IMPLICIT NONE
 
@@ -667,6 +722,38 @@ END IF
 
 IF ( ALLOCATED(river_nexty_grid) ) THEN
   DEALLOCATE( river_nexty_grid )
+END IF
+
+IF ( ALLOCATED(rivers_lat2d) ) THEN
+  DEALLOCATE( rivers_lat2d )
+END IF
+
+IF ( ALLOCATED(rivers_lon2d) ) THEN
+  DEALLOCATE( rivers_lon2d )
+END IF
+
+IF ( ALLOCATED(rivers_dir) ) THEN
+  DEALLOCATE( rivers_dir )
+END IF
+
+IF ( ALLOCATED(land_fraction_2d) ) THEN
+  DEALLOCATE( land_fraction_2d )
+END IF
+
+IF ( ALLOCATED(rivers_dra) ) THEN
+  DEALLOCATE( rivers_dra )
+END IF
+
+IF ( ALLOCATED(rivers_seq) ) THEN
+  DEALLOCATE( rivers_seq )
+END IF
+
+IF ( ALLOCATED(rivers_outflow_number) ) THEN
+  DEALLOCATE( rivers_outflow_number )
+END IF
+
+IF ( ALLOCATED(rivers_storage) ) THEN
+  DEALLOCATE( rivers_storage )
 END IF
 
 ! CaMa-Flood variables.

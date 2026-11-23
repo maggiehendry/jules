@@ -168,7 +168,8 @@ SUBROUTINE init_ic_shared ( nvars_required, required_vars,                     &
                             default_values )
 
 USE dictionary_mod,      ONLY: dict, dict_get, dict_free
-USE model_interface_mod, ONLY: populate_var, get_var_id
+USE model_interface_mod, ONLY: get_var_id
+USE populate_var_mod,    ONLY: populate_var
 USE templating_mod,      ONLY: tpl_has_var_name, tpl_substitute_var
 USE read_dump_mod,       ONLY: read_dump
 

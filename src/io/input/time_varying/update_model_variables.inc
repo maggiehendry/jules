@@ -12,7 +12,7 @@ USE data_cube_mod, ONLY: data_cube, cube_free
 
 USE interpolation_mod, ONLY: interpolate
 
-USE model_interface_mod, ONLY: populate_var
+USE populate_var_mod, ONLY: populate_var
 
 IMPLICIT NONE
 

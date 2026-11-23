@@ -36,7 +36,9 @@ USE model_grid_mod, ONLY: grid_area_ij, grid_lat => latitude,                  &
       grid_lon => longitude, grid_x_coord => projection_x_coord,               &
       grid_y_coord => projection_y_coord, l_coord_latlon
 
-USE model_interface_mod, ONLY: identifier_len, populate_var, get_var_id
+USE model_interface_mod, ONLY: identifier_len, get_var_id
+
+USE populate_var_mod, ONLY: populate_var
 
 USE string_utils_mod, ONLY: to_string
 

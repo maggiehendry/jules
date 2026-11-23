@@ -46,7 +46,9 @@ USE string_utils_mod, ONLY: to_string
 
 USE templating_mod, ONLY: tpl_has_var_name, tpl_substitute_var
 
-USE model_interface_mod, ONLY: identifier_len, populate_var, get_var_id
+USE model_interface_mod, ONLY: identifier_len, get_var_id
+
+USE populate_var_mod, ONLY: populate_var
 
 USE ancil_info, ONLY: land_pts
 

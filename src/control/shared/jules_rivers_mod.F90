@@ -382,46 +382,6 @@ INTEGER ::                                                                     &
    nseqmax   = imdi
                             ! Maximum value of routing grid sequence.
 
-!------------------------------------------------------------------------------
-! Declarations of 2D ancillary variables. These 2D variables are only used
-! during initialisation of standalone runs.
-!------------------------------------------------------------------------------
-! Grid index variables.
-!------------------------------------------------------------------------------
-REAL(KIND=real_jlslsm), ALLOCATABLE :: river_nextx_grid(:,:)
-   ! x index of next downstream point.
-REAL(KIND=real_jlslsm), ALLOCATABLE :: river_nexty_grid(:,:)
-   ! y index of next downstream point.
-
-!------------------------------------------------------------------------------
-! Ancillary arrays for CaMa-Flood, defined on 2D rivers grid.
-!------------------------------------------------------------------------------
-REAL(KIND=real_jlslsm), ALLOCATABLE ::                                         &
-  channel_depth_grid(:,:),                                                     &
-     ! River channel depth (to bankfull level) (m).
-  channel_width_grid(:,:),                                                     &
-     ! River channel width (at bankfull level) (m).
-  mean_sea_level_grid(:,:),                                                    &
-     ! Mean sea level elevation at river mouth, relative to top of river
-     ! channel (m). Only values at river mouths are used.
-  river_distance_grid(:,:),                                                    &
-     ! Distance to next downstream gridpoint (m).
-  river_elevation_grid(:,:),                                                   &
-     ! Elevation of top of river channel (m).
-  river_length_grid(:,:),                                                      &
-     ! Length of river reach (m).
-  river_manning_grid(:,:)
-     ! Manning roughness coefficient for river channel (1).
-
-!------------------------------------------------------------------------------
-! Ancillary arrays for minor reservoirs, defined on 2D rivers grid.
-!------------------------------------------------------------------------------
-REAL(KIND=real_jlslsm), ALLOCATABLE ::                                         &
-  minor_res_capacity_grid(:,:),                                                &
-     ! Storage capacity of minor reservoirs (kg).
-  minor_res_frac_grid(:,:)
-    ! Catchment area of minor reservoirs as fraction of area.
-
 CHARACTER(LEN=*), PARAMETER, PRIVATE :: ModuleName='JULES_RIVERS_MOD'
 
 !------------------------------------------------------------------------------
@@ -585,37 +545,6 @@ TYPE :: rivers_data_type
                            ! Water abstracted from rivers over river timestep,
                            ! on global land points(kg m-2).
 
-  ! Ancillary arrays defined on full 2D rivers grid.
-  REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_seq(:,:)
-                            ! River routing pathway sequence
-  REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_dir(:,:)
-                            ! River routing direction index
-  REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_dra(:,:)
-                            ! Catchment area draining to a grid cell
-                            !    (no. of grid cells)
-  REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_lat2d(:,:)
-                            ! Full 2D latitude field
-  REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_lon2d(:,:)
-                            ! Full 2D longitude field
-  REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_outflow_number(:,:)
-                            ! Maps ocean outflow gridboxes to the river they
-                            !    belong to (on rivers grid)
-                            ! Used for coupling to ocean model
-  REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_storage(:,:)
-                            ! Initial river storage (kg) values on 2D grid
-                            ! Required to allow River storage to be initialised
-                            ! from an ancillary on the 2d Rivers grid.
-                            ! The ancillary can either be for a single time or
-                            ! a 12-month climatology
-  REAL(KIND=real_jlslsm), ALLOCATABLE :: land_fraction_2d(:,:)
-                            ! Land fraction on global 2D grid
-
-  ! Arrays defined on 1d river points vectors
-  REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_xgrid(:)
-                            ! Coordinate values for x-dimension of rivers grid
-  REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_ygrid(:)
-                            ! Coordinate values for y-dimension of rivers grid
-
   REAL(KIND=real_jlslsm), ALLOCATABLE :: rfm_flowobs1_rp(:)
                             ! Initial (observed) river flow (kg m-2 s-1)
   REAL(KIND=real_jlslsm), ALLOCATABLE :: rfm_surfstore_rp(:)
@@ -690,15 +619,6 @@ TYPE :: rivers_type
   REAL(KIND=real_jlslsm), POINTER :: minor_res_storage(:)
   REAL(KIND=real_jlslsm), POINTER :: tot_abstracted_minor_res_global(:)
   REAL(KIND=real_jlslsm), POINTER :: tot_net_abstracted_river_global(:)
-  REAL(KIND=real_jlslsm), POINTER :: rivers_seq(:,:)
-  REAL(KIND=real_jlslsm), POINTER :: rivers_dir(:,:)
-  REAL(KIND=real_jlslsm), POINTER :: rivers_dra(:,:)
-  REAL(KIND=real_jlslsm), POINTER :: rivers_lat2d(:,:)
-  REAL(KIND=real_jlslsm), POINTER :: rivers_lon2d(:,:)
-  REAL(KIND=real_jlslsm), POINTER :: rivers_storage(:,:)
-  REAL(KIND=real_jlslsm), POINTER :: rivers_xgrid(:)
-  REAL(KIND=real_jlslsm), POINTER :: rivers_ygrid(:)
-  REAL(KIND=real_jlslsm), POINTER :: rivers_outflow_number(:,:)
   REAL(KIND=real_jlslsm), POINTER :: rfm_flowobs1_rp(:)
   REAL(KIND=real_jlslsm), POINTER :: rfm_surfstore_rp(:)
   REAL(KIND=real_jlslsm), POINTER :: rfm_substore_rp(:)
@@ -746,20 +666,6 @@ ALLOCATE(rivers_data%tot_sub_runoff_gb(land_pts))
 ALLOCATE(rivers_data%acc_lake_evap_gb(t_i_length,t_j_length))
 ALLOCATE(rivers_data%rivers_sto_per_m2_on_landpts(land_pts))
 ALLOCATE(rivers_data%rivers_adj_on_landpts(land_pts))
-! Arrays defined on rivers points are currently allocated in
-! src/initialisation/standalone/ancillaries/init_rivers_props_mod.F90
-! for JULES standaline
-! This will be changed in #1258 so the setup has been left in.
-#if defined(UM_JULES)
-!!!ALLOCATE(rivers_data%rivers_storage(nx_rivers, ny_rivers))
-!!!ALLOCATE(rivers_data%rivers_seq(nx_rivers, ny_rivers))
-!!!ALLOCATE(rivers_data%rivers_dir(nx_rivers, ny_rivers))
-!!!ALLOCATE(rivers_data%rivers_dra(nx_rivers, ny_rivers))
-!!!ALLOCATE(rivers_data%rivers_lat2d(nx_rivers, ny_rivers))
-!!!ALLOCATE(rivers_data%rivers_lon2d(nx_rivers, ny_rivers))
-!!!ALLOCATE(rivers_data%rivers_xgrid(nx_rivers))
-!!!ALLOCATE(rivers_data%rivers_ygrid(ny_rivers))
-#endif
 #else
 ALLOCATE(rivers_data%tot_surf_runoff_gb(1))
 ALLOCATE(rivers_data%tot_sub_runoff_gb(1))
@@ -796,15 +702,6 @@ rivers_data%tot_sub_runoff_gb(:)  = 0.0
 rivers_data%acc_lake_evap_gb(:,:)   = 0.0
 rivers_data%rivers_sto_per_m2_on_landpts(:) = 0.0
 rivers_data%rivers_adj_on_landpts(:) = 0.0
-#if defined(UM_JULES)
-!!!rivers_data%rivers_seq(:,:) = 0.0
-!!!rivers_data%rivers_dir(:,:) = 0.0
-!!!rivers_data%rivers_dra(:,:) = 0.0
-!!!rivers_data%rivers_lat2d(:,:) = 0.0
-!!!rivers_data%rivers_lon2d(:,:) = 0.0
-!!!rivers_data%rivers_xgrid(:) = 0.0
-!!!rivers_data%rivers_ygrid(:) = 0.0
-#endif
 
 IF (lhook) CALL dr_hook(ModuleName//':'//RoutineName,zhook_out,zhook_handle)
 RETURN
@@ -1461,13 +1358,6 @@ DEALLOCATE(rivers_data%rflow_rp)
 DEALLOCATE(rivers_data%rrun_rp)
 DEALLOCATE(rivers_data%rrun_surf_rp)
 DEALLOCATE(rivers_data%rrun_sub_surf_rp)
-!!!DEALLOCATE(rivers_data%rivers_seq)
-!!!DEALLOCATE(rivers_data%rivers_dir)
-!!!DEALLOCATE(rivers_data%rivers_dra)
-!!!DEALLOCATE(rivers_data%rivers_lat2d)
-!!!DEALLOCATE(rivers_data%rivers_lon2d)
-!!!DEALLOCATE(rivers_data%rivers_xgrid)
-!!!DEALLOCATE(rivers_data%rivers_ygrid)
 DEALLOCATE(rivers_data%rfm_flowobs1_rp)
 DEALLOCATE(rivers_data%rfm_surfstore_rp)
 DEALLOCATE(rivers_data%rfm_substore_rp)
@@ -1517,13 +1407,6 @@ rivers%rivers_sto_per_m2_on_landpts => rivers_data%rivers_sto_per_m2_on_landpts
 rivers%rivers_adj_on_landpts => rivers_data%rivers_adj_on_landpts
 #if defined(UM_JULES)
 rivers%global_land_index => rivers_data%global_land_index
-!!!rivers%rivers_seq => rivers_data%rivers_seq
-!!!rivers%rivers_dir => rivers_data%rivers_dir
-!!!rivers%rivers_dra => rivers_data%rivers_dra
-!!!rivers%rivers_lat2d => rivers_data%rivers_lat2d
-!!!rivers%rivers_lon2d => rivers_data%rivers_lon2d
-!!!rivers%rivers_xgrid => rivers_data%rivers_xgrid
-!!!rivers%rivers_ygrid => rivers_data%rivers_ygrid
 #endif
 
 
@@ -1579,13 +1462,6 @@ NULLIFY(rivers%rflow_rp)
 NULLIFY(rivers%rrun_rp)
 NULLIFY(rivers%rrun_surf_rp)
 NULLIFY(rivers%rrun_sub_surf_rp)
-!!!NULLIFY(rivers_seq)
-!!!NULLIFY(rivers_dir)
-!!!NULLIFY(rivers_dra)
-!!!NULLIFY(rivers_lat2d)
-!!!NULLIFY(rivers_lon2d)
-!!!NULLIFY(rivers%rivers_xgrid)
-!!!NULLIFY(rivers%rivers_ygrid)
 NULLIFY(rivers%rfm_flowobs1_rp)
 NULLIFY(rivers%rfm_surfstore_rp)
 NULLIFY(rivers%rfm_substore_rp)

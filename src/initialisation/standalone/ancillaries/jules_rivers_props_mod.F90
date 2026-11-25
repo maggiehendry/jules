@@ -35,7 +35,7 @@ IMPLICIT NONE
 !-----------------------------------------------------------------------------
 
 ! Scalars in namelist.
-INTEGER, PARAMETER :: nvars_max = 9
+INTEGER, PARAMETER :: nvars_max = 17
   ! The maximum possible number of ancillary variables that are read in.
 
 INTEGER :: nvars
@@ -69,7 +69,7 @@ LOGICAL ::                                                                     &
   l_ignore_ancil_rivers_check = .FALSE.
     ! Switch to check river routing & river number ancillary for compatibility.
     ! The current Rose stem test ancils are not compatible as the land sea
-    ! mask is different. Setting this to true maintains bit comparability &
+    ! mask is different. Setting this to true maintains bit comparability      &
     ! protects the calculation of the coupling field needed for the LFRic
     ! coupled miniapp.
 
@@ -223,6 +223,27 @@ REAL(KIND=real_jlslsm), ALLOCATABLE ::                                         &
      ! Manning roughness coefficient for river channel (1).
 
 !------------------------------------------------------------------------------
+! Ancillary arrays for reservoirs, defined on 2D rivers grid.
+!------------------------------------------------------------------------------
+REAL(KIND=real_jlslsm), ALLOCATABLE ::                                         &
+  res_capacity_grid(:,:),                                                      &
+     ! Storage capacity of reservoirs (kg).
+  res_catch_grid(:,:),                                                         &
+    ! Catchment area of reservoirs (m2).
+  res_year_grid(:,:),                                                          &
+    ! Initialisation year of reservoirs.
+  res_critical_grid(:,:),                                                      &
+    ! Critical storage of reservoir (kg).
+  res_flood_grid(:,:),                                                         &
+    ! Flood storage of reservoir (kg).
+  res_emergency_grid(:,:),                                                     &
+    ! Emergency storage of reservoir (kg).
+  res_normal_release_grid(:,:),                                                &
+    ! Normal release rate of reservoir (kg s-1).
+  res_flood_release_grid(:,:)
+    ! Flood release rate of reservoir (kg s-1).
+
+!------------------------------------------------------------------------------
 ! Ancillary arrays for minor reservoirs, defined on 2D rivers grid.
 !------------------------------------------------------------------------------
 REAL(KIND=real_jlslsm), ALLOCATABLE ::                                         &
@@ -239,8 +260,8 @@ SUBROUTINE check_jules_rivers_props()
 
 USE jules_rivers_mod, ONLY: nx_rivers_in=>nx_rivers, ny_rivers_in=>ny_rivers,  &
                             i_river_vn, land_dx, land_dy, l_init_storage,      &
-                            l_minor_reservoirs, l_riv_overbank,                &
-                            nx_land_grid, ny_land_grid,                        &
+                            l_minor_reservoirs, l_reservoirs,                  &
+                            l_riv_overbank, nx_land_grid, ny_land_grid,        &
                             x1_land_grid, y1_land_grid, rivers_length,         &
                             l_outflow_per_river, rivers_camaflood,             &
                             rivers_regrid, rivers_rfm
@@ -264,7 +285,7 @@ CHARACTER(LEN=*), PARAMETER :: RoutineName = 'CHECK_JULES_RIVERS_PROPS'
 INTEGER :: i ! Loop counter
 
 INTEGER, PARAMETER ::                                                          &
-   nvar_values = 11         ! Number of recognised identifiers
+   nvar_values = 19         ! Number of recognised identifiers
 CHARACTER(LEN=identifier_len) ::                                               &
    var_values(nvar_values) ! Names of recognised identifiers
 
@@ -289,6 +310,14 @@ var_values(:) = ['area                   ',                                    &
                  'rivers_storage         ',                                    &
                  'logn_mean              ',                                    &
                  'logn_stdev             ',                                    &
+                 'res_capacity_grid      ',                                    &
+                 'res_catch_grid         ',                                    &
+                 'res_year_grid          ',                                    &
+                 'res_critical_grid      ',                                    &
+                 'res_flood_grid         ',                                    &
+                 'res_emergency_grid     ',                                    &
+                 'res_normal_release_grid',                                    &
+                 'res_flood_release_grid ',                                    &
                  'minor_res_capacity_grid',                                    &
                  'minor_res_frac_grid    ']
 
@@ -464,10 +493,11 @@ SUBROUTINE allocate_river_vars_grid( global_land_pts, nx_rivers, ny_rivers,    &
 !   pointers.
 !------------------------------------------------------------------------------
 
-USE jules_rivers_mod, ONLY: i_river_vn, l_minor_reservoirs, l_sea_level,       &
-                            rivers_trip, rivers_rfm, rivers_camaflood,         &
-                            rivers_data_type, rivers_type,                     &
-                            l_outflow_per_river, l_init_storage
+USE jules_rivers_mod, ONLY: i_river_vn, rivers_trip, rivers_rfm,               &
+                            rivers_camaflood,                                  &
+                            l_reservoirs, l_minor_reservoirs, l_sea_level,     &
+                            l_outflow_per_river, l_init_storage,               &
+                            rivers_data_type, rivers_type
 
 IMPLICIT NONE
 
@@ -628,6 +658,29 @@ END IF
 ALLOCATE( rivers_storage(nx_size,ny_size), STAT = ERROR )
 error_sum = error_sum + ERROR
 
+! Reservoir 2D ancillary variables.
+IF ( l_reservoirs ) THEN
+  nx_size = nx_rivers
+  ny_size = ny_rivers
+ELSE
+  nx_size = 1
+  ny_size = 1
+END IF
+ALLOCATE( res_capacity_grid(nx_size,ny_size), STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( res_catch_grid(nx_size,ny_size), STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( res_year_grid(nx_size,ny_size), STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( res_critical_grid(nx_size,ny_size), STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( res_flood_grid(nx_size,ny_size), STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( res_emergency_grid(nx_size,ny_size), STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( res_normal_release_grid(nx_size,ny_size), STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( res_flood_release_grid(nx_size,ny_size), STAT = ERROR )
 ! Minor reservoir 2D ancillary variables.
 IF ( l_minor_reservoirs ) THEN
   nx_size = nx_rivers
@@ -669,6 +722,14 @@ rivers_storage(:,:)              = rmdi
 land_fraction_2d(:,:)            = rmdi
 minor_res_capacity_grid(:,:)     = rmdi
 minor_res_frac_grid(:,:)         = rmdi
+res_capacity_grid(:,:)        = rmdi
+res_catch_grid(:,:)           = rmdi
+res_year_grid(:,:)            = rmdi
+res_critical_grid(:,:)        = rmdi
+res_flood_grid(:,:)           = rmdi
+res_emergency_grid(:,:)       = rmdi
+res_normal_release_grid(:,:)  = rmdi
+res_flood_release_grid(:,:)   = rmdi
 
 RETURN
 END SUBROUTINE allocate_river_vars_grid
@@ -771,6 +832,32 @@ END IF
 
 IF ( ALLOCATED( river_manning_grid ) ) THEN
   DEALLOCATE( river_manning_grid )
+END IF
+
+! Reservoir variables.
+IF ( ALLOCATED( res_capacity_grid ) ) THEN
+  DEALLOCATE( res_capacity_grid )
+END IF
+IF ( ALLOCATED( res_catch_grid ) ) THEN
+  DEALLOCATE( res_catch_grid )
+END IF
+IF ( ALLOCATED( res_year_grid ) ) THEN
+  DEALLOCATE( res_year_grid )
+END IF
+IF ( ALLOCATED( res_critical_grid ) ) THEN
+  DEALLOCATE( res_critical_grid )
+END IF
+IF ( ALLOCATED( res_flood_grid ) ) THEN
+  DEALLOCATE( res_flood_grid )
+END IF
+IF ( ALLOCATED( res_emergency_grid ) ) THEN
+  DEALLOCATE( res_emergency_grid )
+END IF
+IF ( ALLOCATED( res_normal_release_grid ) ) THEN
+  DEALLOCATE( res_normal_release_grid )
+END IF
+IF ( ALLOCATED( res_flood_release_grid ) ) THEN
+  DEALLOCATE( res_flood_release_grid )
 END IF
 
 ! Minor reservoir variables.

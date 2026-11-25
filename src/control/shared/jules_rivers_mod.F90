@@ -146,9 +146,13 @@ LOGICAL ::                                                                     &
                  ! - OASIS send field contains 'inland_outflow'
                  ! - The diagnostic 'inland_outflow_rp' has been requested
                  ! - UM-TRIP when l_inland = T
-   ,l_init_storage = .FALSE.
+   ,l_init_storage = .FALSE.                                                   &
                  ! Set to true if an initial river storage ancillary file is
                  ! used
+   ,l_reservoirs = .FALSE.
+                            ! Switch for reservoirs.
+                            ! .TRUE.  = consider major reservoirs
+                            ! .FALSE. = do not consider reservoirs
 
 INTEGER ::                                                                     &
    nstep_rivers = imdi                                                         &
@@ -242,7 +246,7 @@ REAL(KIND=real_jlslsm) ::                                                      &
 ! Single namelist definition for UM and standalone
 !------------------------------------------------------------------------------
 NAMELIST  /jules_rivers/                                                       &
-  l_rivers, l_minor_reservoirs, l_riv_overbank,                                &
+  l_rivers, l_reservoirs, l_minor_reservoirs, l_riv_overbank,                  &
   l_adapt_timestep, l_sea_level,                                               &
   l_vary_sea_level, i_river_vn, nstep_rivers,                                  &
   trip_globe_shape,                                                            &
@@ -565,6 +569,40 @@ TYPE :: rivers_data_type
                             ! River outflow into the ocean (kg s-1)
   REAL(KIND=real_jlslsm), ALLOCATABLE :: inland_outflow_rp(:)
                             ! Inland basin flow into soil moisture (kg m-2 s-1)
+
+  !----------------------------------------------------------------------------
+  ! Reservoir ancillary variables, defined on river points.
+  !----------------------------------------------------------------------------
+  REAL(KIND=real_jlslsm), ALLOCATABLE :: res_capacity(:)
+    ! Storage capacity of reservoirs (kg).
+  REAL(KIND=real_jlslsm), ALLOCATABLE :: res_catch(:)
+    ! Catchment area of reservoirs (m).
+  REAL(KIND=real_jlslsm), ALLOCATABLE :: res_year(:)
+    ! Initialisation year of reservoirs.
+  REAL(KIND=real_jlslsm), ALLOCATABLE :: res_critical(:)
+    ! Critical storage of reservoir (kg).
+  REAL(KIND=real_jlslsm), ALLOCATABLE :: res_flood(:)
+    ! Flood storage of reservoir (kg).
+  REAL(KIND=real_jlslsm), ALLOCATABLE :: res_emergency(:)
+    ! Emergency storage of reservoir (kg).
+  REAL(KIND=real_jlslsm), ALLOCATABLE :: res_normal_release(:)
+    ! Normal release rate of reservoir (kg s-1).
+  REAL(KIND=real_jlslsm), ALLOCATABLE :: res_flood_release(:)
+    ! Flood release rate of reservoir (kg s-1).
+
+  !----------------------------------------------------------------------------
+  ! Reservoir prognostic variables, defined on river points.
+  !----------------------------------------------------------------------------
+  REAL(KIND=real_jlslsm), ALLOCATABLE :: res_storage(:)
+    ! Water stored in reservoirs (kg).
+  REAL(KIND=real_jlslsm), ALLOCATABLE :: res_cap_current(:)
+    ! Capacity of currently active reservoirs (kg).
+
+  ! Variables for coupling with water resources.
+  !----------------------------------------------------------------------------
+  REAL, ALLOCATABLE :: tot_abstracted_res_global(:)
+                           !  Water abstracted from reservoirs over river
+                           !  timestep, on global land points (kg).
 END TYPE rivers_data_type
 
 TYPE :: rivers_type
@@ -629,6 +667,17 @@ TYPE :: rivers_type
   REAL(KIND=real_jlslsm), POINTER :: rivers_boxareas_rp(:)
   REAL(KIND=real_jlslsm), POINTER :: rivers_outflow_rp(:)
   REAL(KIND=real_jlslsm), POINTER :: inland_outflow_rp(:)
+  REAL(KIND=real_jlslsm), POINTER :: res_capacity(:)
+  REAL(KIND=real_jlslsm), POINTER :: res_catch(:)
+  REAL(KIND=real_jlslsm), POINTER :: res_storage(:)
+  REAL(KIND=real_jlslsm), POINTER :: res_cap_current(:)
+  REAL(KIND=real_jlslsm), POINTER :: res_year(:)
+  REAL(KIND=real_jlslsm), POINTER :: res_critical(:)
+  REAL(KIND=real_jlslsm), POINTER :: res_flood(:)
+  REAL(KIND=real_jlslsm), POINTER :: res_emergency(:)
+  REAL(KIND=real_jlslsm), POINTER :: res_normal_release(:)
+  REAL(KIND=real_jlslsm), POINTER :: res_flood_release(:)
+  REAL(KIND=real_jlslsm), POINTER :: tot_abstracted_res_global(:)
 END TYPE rivers_type
 
 CONTAINS
@@ -1100,6 +1149,8 @@ CALL jules_print('jules_rivers_inputs_mod',                                    &
 
 WRITE(lineBuffer,*)' l_rivers = ',l_rivers
 CALL jules_print('jules_rivers',lineBuffer)
+WRITE(lineBuffer,*)' l_reservoirs = ',l_reservoirs
+CALL jules_print('jules_rivers',lineBuffer)
 WRITE(lineBuffer,*)' l_minor_reservoirs = ',l_minor_reservoirs
 CALL jules_print('jules_rivers',lineBuffer)
 WRITE(lineBuffer,*)' l_riv_overbank = ',l_riv_overbank
@@ -1243,7 +1294,7 @@ CHARACTER(LEN=*), PARAMETER :: RoutineName='READ_NML_JULES_RIVERS'
 INTEGER, PARAMETER :: no_of_types = 3
 INTEGER, PARAMETER :: n_int = 5
 INTEGER, PARAMETER :: n_real = 12
-INTEGER, PARAMETER :: n_log = 6
+INTEGER, PARAMETER :: n_log = 7
 
 TYPE :: my_namelist
   SEQUENCE
@@ -1265,6 +1316,7 @@ TYPE :: my_namelist
   REAL(KIND=real_jlslsm) :: rivers_speed
   REAL(KIND=real_jlslsm) :: runoff_factor
   LOGICAL :: l_adapt_timestep
+  LOGICAL :: l_reservoirs
   LOGICAL :: l_minor_reservoirs
   LOGICAL :: l_riv_overbank
   LOGICAL :: l_rivers
@@ -1304,6 +1356,7 @@ IF (mype == 0) THEN
   my_nml % rivers_speed = rivers_speed
   my_nml % runoff_factor = runoff_factor
   my_nml % l_adapt_timestep = l_adapt_timestep
+  my_nml % l_reservoirs = l_reservoirs
   my_nml % l_minor_reservoirs = l_minor_reservoirs
   my_nml % l_riv_overbank = l_riv_overbank
   my_nml % l_rivers = l_rivers
@@ -1332,6 +1385,7 @@ IF (mype /= 0) THEN
   rivers_speed = my_nml % rivers_speed
   runoff_factor = my_nml % runoff_factor
   l_adapt_timestep = my_nml % l_adapt_timestep
+  l_reservoirs  = my_nml % l_reservoirs
   l_minor_reservoirs  = my_nml % l_minor_reservoirs
   l_riv_overbank = my_nml % l_riv_overbank
   l_rivers = my_nml % l_rivers
@@ -1815,6 +1869,45 @@ ALLOCATE(rivers_data%rivers_outflow_number_rp(np_rivers_tmp), STAT = ERROR)
 error_sum = error_sum + ERROR
 
 !------------------------------------------------------------------------------
+! Allocate reservoir variables.
+!------------------------------------------------------------------------------
+IF ( l_reservoirs .AND. l_is_master_task ) THEN
+  ! Full size.
+  np_rivers_tmp      = np_rivers
+  np_global_land_tmp = global_land_pts
+ELSE
+  ! Minimum size.
+  np_rivers_tmp      = 1
+  np_global_land_tmp = 1
+END IF
+! Reservoir ancillaries.
+ALLOCATE( rivers_data%res_capacity(np_rivers_tmp),      STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%res_catch(np_rivers_tmp),         STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%res_year(np_rivers_tmp),          STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%res_critical(np_rivers_tmp),      STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%res_flood(np_rivers_tmp),         STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%res_emergency(np_rivers_tmp),     STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%res_normal_release(np_rivers_tmp), STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%res_flood_release(np_rivers_tmp), STAT = ERROR )
+error_sum = error_sum + ERROR
+! Reservoir prognostics.
+ALLOCATE( rivers_data%res_storage(np_rivers_tmp),       STAT = ERROR )
+error_sum = error_sum + ERROR
+ALLOCATE( rivers_data%res_cap_current(np_rivers_tmp),   STAT = ERROR )
+error_sum = error_sum + ERROR
+! Reservoir coupling to rivers.
+ALLOCATE( rivers_data%tot_abstracted_res_global(np_global_land_tmp),           &
+                                                              STAT = ERROR )
+error_sum = error_sum + ERROR
+
+!------------------------------------------------------------------------------
 ! Allocate minor reservoir variables.
 !------------------------------------------------------------------------------
 IF ( l_minor_reservoirs .AND. l_is_master_task ) THEN
@@ -1938,6 +2031,19 @@ rivers_data%rivers_ilat_rp(:)   = rmdi
 rivers_data%rivers_ilon_rp(:)   = rmdi
 !*** These should be integers; sort later
 
+! Initialise reservoir variables. Storage (the state variable) should be
+! initialised to zero until better initialisation is possible.
+rivers_data%res_capacity(:)      = rmdi
+rivers_data%res_catch(:)         = rmdi
+rivers_data%res_year(:)          = rmdi
+rivers_data%res_critical(:)      = rmdi
+rivers_data%res_flood(:)         = rmdi
+rivers_data%res_emergency(:)     = rmdi
+rivers_data%res_normal_release(:)= rmdi
+rivers_data%res_flood_release(:) = rmdi
+rivers_data%res_storage(:)       = 0.0
+rivers_data%res_cap_current(:)   = 0.0
+
 ! Initialise minor reservoir variables. Storage (the state variable) should be
 ! initialised to zero until better initialisation is possible.
 rivers_data%minor_res_capacity(:) = rmdi
@@ -1945,6 +2051,7 @@ rivers_data%minor_res_frac(:)     = rmdi
 rivers_data%minor_res_storage(:)  = 0.0
 
 ! Initialise further variables to couple to water resources.
+rivers_data%tot_abstracted_res_global(:)       = rmdi
 rivers_data%tot_abstracted_minor_res_global(:) = rmdi
 rivers_data%tot_net_abstracted_river_global(:) = rmdi
 
@@ -2015,6 +2122,21 @@ rivers%rivers_sto_rp => rivers_data%rivers_sto_rp
 rivers%rivers_outflow_number_rp => rivers_data%rivers_outflow_number_rp
 rivers%sub_surf_roff_rp => rivers_data%sub_surf_roff_rp
 rivers%surf_roff_rp => rivers_data%surf_roff_rp
+
+
+! Reservoir variables.
+rivers%res_capacity      => rivers_data%res_capacity
+rivers%res_catch         => rivers_data%res_catch
+rivers%res_year          => rivers_data%res_year
+rivers%res_critical      => rivers_data%res_critical
+rivers%res_flood         => rivers_data%res_flood
+rivers%res_emergency     => rivers_data%res_emergency
+rivers%res_normal_release => rivers_data%res_normal_release
+rivers%res_flood_release  => rivers_data%res_flood_release
+rivers%res_storage       => rivers_data%res_storage
+rivers%res_cap_current   => rivers_data%res_cap_current
+rivers%tot_abstracted_res_global                                               &
+                               => rivers_data%tot_abstracted_res_global
 
 ! Minor reservoir variables.
 rivers%minor_res_capacity      => rivers_data%minor_res_capacity

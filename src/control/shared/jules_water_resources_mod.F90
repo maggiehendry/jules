@@ -202,6 +202,8 @@ INTEGER ::                                                                     &
     ! Index of livestock use in multi-use arrays.
   use_transfers = 0,                                                           &
     ! Index of transfers in multi-use arrays.
+  sw_res_source = 0,                                                           &
+    ! Index of reservoirs in surface water source arrays.
   water_res_count = 0
     ! Counter of timesteps done in current water resource timestep.
 
@@ -220,7 +222,8 @@ CONTAINS
 !##############################################################################
 !##############################################################################
 
-SUBROUTINE check_jules_water_resources( l_top, l_rivers, l_minor_reservoirs )
+SUBROUTINE check_jules_water_resources( l_top, l_rivers, l_reservoirs,         &
+                                        l_minor_reservoirs )
 
 USE ereport_mod, ONLY: ereport
 
@@ -239,6 +242,8 @@ LOGICAL, INTENT(IN) ::                                                         &
     ! Switch for TOPMODEL-based hydrology.
   l_rivers,                                                                    &
     ! Switch for runoff routing
+  l_reservoirs,                                                                &
+    ! Switch for reservoirs.
   l_minor_reservoirs
     ! Switch for minor_reservoirs.
 
@@ -491,7 +496,8 @@ END IF  !  l_water_resources
 ! jules_hydrology, jules_rivers and jules_water_resources namelists have been
 ! read. The current location is not ideal in this respect.
 !------------------------------------------------------------------------------
-CALL set_jules_water_resources( l_top, l_rivers, l_minor_reservoirs )
+CALL set_jules_water_resources( l_top, l_rivers, l_reservoirs,                 &
+                                l_minor_reservoirs )
 
 !------------------------------------------------------------------------------
 ! Further checks that use flags set in set_jules_water_resources.
@@ -559,7 +565,8 @@ END SUBROUTINE check_jules_water_resources
 !##############################################################################
 !##############################################################################
 
-SUBROUTINE set_jules_water_resources( l_top, l_rivers, l_minor_reservoirs )
+SUBROUTINE set_jules_water_resources( l_top, l_rivers, l_reservoirs,           &
+                                      l_minor_reservoirs )
 
 !------------------------------------------------------------------------------
 ! Description:
@@ -573,6 +580,8 @@ LOGICAL, INTENT(IN) ::                                                         &
     ! Switch for TOPMODEL-based hydrology.
   l_rivers,                                                                    &
     ! Switch for runoff routing
+  l_reservoirs,                                                                &
+    ! Switch for reservoirs.
   l_minor_reservoirs
     ! Switch for minor_reservoirs.
 
@@ -638,6 +647,10 @@ IF ( l_water_resources ) THEN
   IF ( l_rivers ) THEN
     n_sw_source     = n_sw_source + 1
     sw_river_source = n_sw_source
+  END IF
+  IF ( l_reservoirs ) THEN
+    n_sw_source         = n_sw_source + 1
+    sw_res_source = n_sw_source
   END IF
   IF ( l_minor_reservoirs ) THEN
     n_sw_source         = n_sw_source + 1

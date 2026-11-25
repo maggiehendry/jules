@@ -48,7 +48,7 @@ USE jules_water_resources_mod, ONLY:                                           &
   jules_water_resources
 
 USE jules_hydrology_mod, ONLY: l_top
-USE jules_rivers_mod,    ONLY: l_rivers, l_minor_reservoirs
+USE jules_rivers_mod,    ONLY: l_rivers, l_reservoirs, l_minor_reservoirs
 
 USE logging_mod, ONLY: log_info, log_fatal, log_warn
 
@@ -120,7 +120,8 @@ END IF
 !------------------------------------------------------------------------------
 ! Check that settings are reasonable.
 !------------------------------------------------------------------------------
-CALL check_jules_water_resources( l_top, l_rivers, l_minor_reservoirs )
+CALL check_jules_water_resources( l_top, l_rivers, l_reservoirs,               &
+                                  l_minor_reservoirs )
 
 !------------------------------------------------------------------------------
 ! Print some human friendly summary information about the selected options.

@@ -296,7 +296,7 @@ IF ( is_master_task() ) THEN
   ! Convert the flow direction field into nextx and nexty fields.
   !----------------------------------------------------------------------------
   CALL process_direction_fields( l_cyclic_x, l_use_direction,                  &
-                                 rivers_dir, direction_grid,            &
+                                 rivers_dir, direction_grid,                   &
                                  river_nextx_grid, river_nexty_grid,           &
                                  nextx_grid, nexty_grid, river_mask )
 
@@ -326,7 +326,7 @@ IF ( is_master_task() ) THEN
   !----------------------------------------------------------------------------
   ! Establish the number and locations of river points.
   !----------------------------------------------------------------------------
-  CALL find_river_points( rivers_xgrid, rivers_ygrid,            &
+  CALL find_river_points( rivers_xgrid, rivers_ygrid,                          &
                           river_xbound, river_ybound, nextx_grid, nexty_grid,  &
                           river_mask, np_rivers )
 
@@ -368,7 +368,7 @@ IF ( is_master_task() ) THEN
   !----------------------------------------------------------------------------
   IF ( l_outflow_per_river .OR. l_init_storage ) THEN
     CALL check_ancil_rivers( dir_mouth, dir_inland_drainage,                   &
-                             direction_grid, rivers_outflow_number,     &
+                             direction_grid, rivers_outflow_number,            &
                              rivers_storage, land_fraction_2d )
   END IF
 
@@ -567,7 +567,7 @@ LOGICAL, INTENT(OUT) ::                                                        &
 ! Array arguments with INTENT(OUT)
 !------------------------------------------------------------------------------
 INTEGER, INTENT(OUT) ::                                                        &
-  global_land_index(global_land_pts)
+  global_land_index(:)
     ! List of indices for the land grid. For every land point, this gives the
     ! location in a 2-D grid.
 
@@ -1137,7 +1137,7 @@ CASE ( 'river_manning_grid' )
 CASE ( 'river_nextx_grid' )
   ! Note that we use is_x_index_arg to indicate that this is an index field.
   CALL remap_field( nx_rivers, ny_rivers, rivers_dx, l_shift_x, l_reverse_y,   &
-                    rivers_xgrid, river_nextx_grid,                     &
+                    rivers_xgrid, river_nextx_grid,                            &
                     is_x_index_arg = .TRUE. )
 
 CASE ( 'river_nexty_grid' )

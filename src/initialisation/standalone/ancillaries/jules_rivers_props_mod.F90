@@ -522,10 +522,6 @@ error_sum = error_sum + ERROR
 ALLOCATE( rivers_lon2d(nx_rivers, ny_rivers), STAT = ERROR )
 error_sum = error_sum + ERROR
 
-! A remapping variable.
-ALLOCATE( rivers_data%global_land_index(global_land_pts), STAT = ERROR )
-error_sum = error_sum + ERROR
-
 ! Flow direction - only needed if l_use_direction=T.
 IF ( l_use_direction ) THEN
   nx_size = nx_rivers
@@ -656,7 +652,6 @@ nexty_grid(:,:)                  = imdi
 river_mask(:,:)                  = imdi
 rivers_lat2d(:,:)                = rmdi
 rivers_lon2d(:,:)                = rmdi
-rivers_data%global_land_index(:) = imdi
 rivers_dir(:,:)                  = rmdi
 direction_grid(:,:)              = imdi
 river_nextx_grid(:,:)            = rmdi
@@ -674,9 +669,6 @@ rivers_storage(:,:)              = rmdi
 land_fraction_2d(:,:)            = rmdi
 minor_res_capacity_grid(:,:)     = rmdi
 minor_res_frac_grid(:,:)         = rmdi
-
-! Associate pointers
-rivers%global_land_index => rivers_data%global_land_index
 
 RETURN
 END SUBROUTINE allocate_river_vars_grid

@@ -799,10 +799,14 @@ starttime = TIME
 IF ( l_irrig_dmd ) THEN
   CALL assign_irrig_fraction(crop_vars,ainfo)
   IF ( l_irrig_limit ) THEN
-    DO ip = 1, np_rivers
-      rivers_sto_per_m2_rgrid(ip) = rivers%rivers_sto_rp(ip) /                 &
+    IF ( is_master_task() ) THEN
+      ! rivers_sto_rp and rivers_boxareas_rp is only allocated at full size on
+      ! master task
+      DO ip = 1, np_rivers
+        rivers_sto_per_m2_rgrid(ip) = rivers%rivers_sto_rp(ip) /               &
                                       rivers%rivers_boxareas_rp(ip)
-    END DO
+      END DO
+    END IF
     CALL scatter_land_from_riv_field(rivers_sto_per_m2_rgrid,                  &
                                      rivers%rivers_sto_per_m2_on_landpts,      &
                                      rivers)

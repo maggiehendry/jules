@@ -391,9 +391,9 @@ REAL(KIND=real_jlslsm), INTENT(IN OUT) ::                                      &
   surfstore(row_length, rows),                                                 &
   flowin(row_length, rows),                                                    &
   bflowin(row_length, rows),                                                   &
-  acc_lake_evap_gb(row_length,rows),                                           &
-  tot_surf_runoff_gb(land_pts),                                                &
-  tot_sub_runoff_gb(land_pts),                                                 &
+  acc_lake_evap_gb(:,:),                                                       &
+  tot_surf_runoff_gb(:),                                                       &
+  tot_sub_runoff_gb(:),                                                        &
     ! Water abstracted from minor reservoirs over river timestep (kg).
   twatstor(river_row_length, river_rows),                                      &
   inlandout_atm_gb(land_pts)

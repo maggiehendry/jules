@@ -51,6 +51,7 @@ USE ancil_info,                ONLY: nsoilt, dim_cs1, dim_cslayer, land_pts,   &
 USE jules_sea_seaice_mod,      ONLY: nice, nice_use
 USE jules_soil_mod,            ONLY: sm_levels
 USE jules_water_tracers_mod,   ONLY: n_wtrac_jls, n_evap_srce
+USE model_grid_mod,            ONLY: global_land_pts
 
 !Subroutines
 USE fluxes_mod,                ONLY: fluxes_alloc
@@ -87,7 +88,7 @@ TYPE(rivers_data_type),    INTENT(IN OUT) :: rivers_data
 TYPE(jls_wtrac_data_type), INTENT(IN OUT) :: wtrac_jls_data
 
 !Local variables
-INTEGER :: temp_size
+INTEGER :: temp_size, temp_size_global
 
 ! Dummy fields for the local river grid size which is used to set water tracer
 ! fields in UM_JULES.  Therefore, a dummy field is needed here to pass into
@@ -116,9 +117,11 @@ sm_levels  = 1
 
 ! OASIS-Rivers will have zero land points, so allocate nominal space instead.
 IF ( land_pts > 0 ) THEN
-  temp_size  = land_pts
+  temp_size        = land_pts
+  temp_size_global = global_land_pts
 ELSE
-  temp_size  = 1
+  temp_size        = 1
+  temp_size_global = 1
   t_i_length = 1
   t_j_length = 1
 END IF
@@ -152,7 +155,8 @@ CALL ancil_info_alloc(temp_size, t_i_length, t_j_length,                       &
                       nice, nsoilt, ntype,                                     &
                       ainfo_data)
 
-CALL jules_rivers_alloc(temp_size, t_i_length, t_j_length, rivers_data)
+CALL jules_rivers_alloc(temp_size_global, temp_size, t_i_length, t_j_length,   &
+                        rivers_data)
 
 CALL coastal_alloc(temp_size, t_i_length, t_j_length,                          &
                    u_i_length, u_j_length,                                     &

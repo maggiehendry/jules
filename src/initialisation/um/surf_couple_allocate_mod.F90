@@ -250,17 +250,6 @@ CALL allocate_jules_arrays(crop_vars_data,psparms_data,top_pdm_data,           &
 
 CALL jules_rivers_alloc_rp( np_rivers, is_master_task(), rivers, rivers_data )
 
-! Allocate global_land_index here until jules:#1558 consolidates the allocation
-! of arrays between the UM & JULES. In standalone, this is allocated in
-! SUBROUTINE allocate_river_vars_grid contained in:
-! src/initialisation/standalone/ancillaries/init_rivers_props_mod.F90
-IF ( l_rivers ) THEN
-  ALLOCATE(rivers_data%global_land_index(atmos_number_of_landpts))
-ELSE
-  ALLOCATE(rivers_data%global_land_index(1))
-END IF
-rivers_data%global_land_index(:) = imdi
-
 ! Metstats is not available in the UM, but call this to prevent an unallocated
 ! pointer.
 CALL metstats_allocate(land_pts)

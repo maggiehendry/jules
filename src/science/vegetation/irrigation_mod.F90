@@ -164,8 +164,8 @@ REAL(KIND=real_jlslsm), INTENT(OUT) ::                                         &
 
 !New arguments replacing USE statements
 !jules_rivers_mod
-REAL(KIND=real_jlslsm), INTENT(IN) :: rivers_sto_per_m2_on_landpts(land_pts)
-REAL(KIND=real_jlslsm), INTENT(OUT) :: rivers_adj_on_landpts(land_pts)
+REAL(KIND=real_jlslsm), INTENT(IN)  :: rivers_sto_per_m2_on_landpts(:)
+REAL(KIND=real_jlslsm), INTENT(OUT) :: rivers_adj_on_landpts(:)
 
 TYPE(rivers_type), INTENT(IN OUT) :: rivers
 
@@ -555,6 +555,8 @@ USE um_types, ONLY: real_jlslsm
 
 USE water_constants_mod, ONLY: rho_water
 
+USE jules_rivers_mod, ONLY: l_rivers
+
 IMPLICIT NONE
 
 !-----------------------------------------------------------------------------
@@ -594,7 +596,7 @@ REAL(KIND=real_jlslsm), INTENT(IN OUT) ::                                      &
     ! Number of days on which irrigation is applied.
   irrigwater_levels(land_pts,nsoilt,sm_levels),                                &
     ! Addition of irrigation water to each soil layer (kg/m2).
-  rivers_adj_on_landpts(land_pts),                                             &
+  rivers_adj_on_landpts(:),                                                    &
     ! Adjustment factor for water storage on land points.
   smcl_soilt(land_pts,nsoilt,sm_levels),                                       &
     ! Soil moisture content of each layer (kg/m2).
@@ -755,15 +757,19 @@ IF ( l_irrig_limit ) THEN
           ! This is not robust with soil tiling. We would need to consider
           ! the possibility that a soil tile could exhaust the river store,
           ! leaving nothing for later tiles.
-          IF ( rivers_sto_per_m2_on_landpts(l) > 0.0) THEN
-            irrig_riv(l) = MAX(irrig_sum - irrig_lim, 0.0)
-            irrig_riv(l) = MIN(rivers_sto_per_m2_on_landpts(l),                &
-                               irrig_riv(l))
-            rivers_adj_on_landpts(l) = (rivers_sto_per_m2_on_landpts(l)        &
-                                        - irrig_riv(l))                        &
-                                       / rivers_sto_per_m2_on_landpts(l)
-            irrig_lim = irrig_lim + irrig_riv(l)
-          END IF ! rivers_sto_per_m2_on_landpts gt 0
+          ! rivers_sto_per_m2_on_landpts etc. are only allocated at full size
+          ! when l_rivers
+          IF ( l_rivers ) THEN
+            IF ( rivers_sto_per_m2_on_landpts(l) > 0.0 ) THEN
+              irrig_riv(l) = MAX(irrig_sum - irrig_lim, 0.0)
+              irrig_riv(l) = MIN(rivers_sto_per_m2_on_landpts(l),              &
+                                 irrig_riv(l))
+              rivers_adj_on_landpts(l) = (rivers_sto_per_m2_on_landpts(l)      &
+                                          - irrig_riv(l))                      &
+                                          / rivers_sto_per_m2_on_landpts(l)
+              irrig_lim = irrig_lim + irrig_riv(l)
+            END IF ! rivers_sto_per_m2_on_landpts gt 0
+          END IF
 
           ! re-calculate soil moisture
           ! if irrigation is constrained, some or all of the extra water

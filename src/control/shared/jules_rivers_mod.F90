@@ -436,12 +436,12 @@ TYPE :: rivers_data_type
                             ! River routing point latitude
   REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_lon_rp(:)
                             ! River routing point longitude
-!*** These should be integers; sort later
+  !*** These should be integers; sort later
   REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_ilat_rp(:)
                             ! River routing index in latitude direction
   REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_ilon_rp(:)
                             ! River routing index in longitude direction
-!*** These should be integers; sort later
+  !*** These should be integers; sort later
   REAL(KIND=real_jlslsm), ALLOCATABLE :: rivers_x_coord_rp(:)
                             ! River routing point projection x coordinate.
                             ! Units can differ between input datasets.
@@ -635,7 +635,8 @@ CONTAINS
 
 !##############################################################################
 
-SUBROUTINE jules_rivers_alloc(land_pts, t_i_length, t_j_length, rivers_data)
+SUBROUTINE jules_rivers_alloc(global_land_pts, land_pts, t_i_length,           &
+                              t_j_length, rivers_data)
 
 !No USE statements other than Dr Hook
 USE parkind1,    ONLY: jprb, jpim
@@ -644,11 +645,24 @@ USE yomhook,     ONLY: lhook, dr_hook
 IMPLICIT NONE
 
 !Arguments
+INTEGER, INTENT(IN) ::                                                         &
+  global_land_pts
+    ! Number of land points (total over all tasks).
 INTEGER, INTENT(IN) :: land_pts, t_i_length, t_j_length
 TYPE(rivers_data_type), INTENT(IN OUT) :: rivers_data
 
-!Local variables
-INTEGER :: ERROR, error_sum  ! Error indicators
+!------------------------------------------------------------------------------
+! Local scalar variables.
+!------------------------------------------------------------------------------
+INTEGER ::                                                                     &
+  ERROR, error_sum, errcode,                                                   &
+    ! Error flags.
+  np_global_land_tmp,                                                          &
+    ! Number of global land points (across all tasks) to allocate for.
+  np_land_tmp,                                                                 &
+    ! Number of land points to allocate for.
+  t_i_length_tmp, t_j_length_tmp
+    ! Length of theta field to allocate for.
 
 INTEGER(KIND=jpim), PARAMETER :: zhook_in  = 0
 INTEGER(KIND=jpim), PARAMETER :: zhook_out = 1
@@ -656,22 +670,46 @@ REAL(KIND=jprb)               :: zhook_handle
 
 CHARACTER(LEN=*), PARAMETER :: RoutineName='JULES_RIVERS_ALLOC'
 
-!End of header
+!end of header
+!------------------------------------------------------------------------------
 
 IF (lhook) CALL dr_hook(ModuleName//':'//RoutineName,zhook_in,zhook_handle)
 
-#if !defined(LFRIC)
-ALLOCATE(rivers_data%tot_surf_runoff_gb(land_pts))
-ALLOCATE(rivers_data%tot_sub_runoff_gb(land_pts))
-ALLOCATE(rivers_data%acc_lake_evap_gb(t_i_length,t_j_length))
-ALLOCATE(rivers_data%rivers_sto_per_m2_on_landpts(land_pts))
-ALLOCATE(rivers_data%rivers_adj_on_landpts(land_pts))
-#else
-ALLOCATE(rivers_data%tot_surf_runoff_gb(1))
-ALLOCATE(rivers_data%tot_sub_runoff_gb(1))
-ALLOCATE(rivers_data%acc_lake_evap_gb(1,1))
-ALLOCATE(rivers_data%rivers_sto_per_m2_on_landpts(1))
-ALLOCATE(rivers_data%rivers_adj_on_landpts(1))
+error_sum = 0
+! LFRIC always has l_rivers = FALSE as Rivers is coupled standalone via OASIS
+IF ( l_rivers ) THEN
+  np_land_tmp         = land_pts
+  t_i_length_tmp      = t_i_length
+  t_j_length_tmp      = t_j_length
+  np_global_land_tmp  = global_land_pts
+ELSE
+  np_land_tmp         = 1
+  t_i_length_tmp      = 1
+  t_j_length_tmp      = 1
+  np_global_land_tmp  = 1
+END IF
+
+ALLOCATE(rivers_data%tot_surf_runoff_gb(np_land_tmp),  STAT = ERROR)
+error_sum = error_sum + ERROR
+ALLOCATE(rivers_data%tot_sub_runoff_gb(np_land_tmp),  STAT = ERROR)
+error_sum = error_sum + ERROR
+ALLOCATE(rivers_data%rivers_sto_per_m2_on_landpts(np_land_tmp),  STAT = ERROR)
+error_sum = error_sum + ERROR
+ALLOCATE(rivers_data%rivers_adj_on_landpts(np_land_tmp),  STAT = ERROR)
+error_sum = error_sum + ERROR
+ALLOCATE(rivers_data%acc_lake_evap_gb(t_i_length_tmp,t_j_length_tmp),          &
+   STAT = ERROR)
+error_sum = error_sum + ERROR
+ALLOCATE(rivers_data%global_land_index(np_global_land_tmp),  STAT = ERROR)
+error_sum = error_sum + ERROR
+
+IF ( error_sum /= 0 ) THEN
+  errcode = 101
+  CALL ereport( RoutineName, errcode,                                          &
+     "Error allocating river routing arrays - non river point")
+END IF
+
+#if defined(LFRIC)
 ALLOCATE(rivers_data%map_river_to_land_points(1))
 ALLOCATE(rivers_data%rfm_iarea_rp(1))
 ALLOCATE(rivers_data%rfm_land_rp(1))
@@ -692,16 +730,14 @@ ALLOCATE(rivers_data%rfm_rivflow_rp(1))
 ALLOCATE(rivers_data%rfm_baseflow_rp(1))
 ALLOCATE(rivers_data%rivers_boxareas_rp(1))
 ALLOCATE(rivers_data%rivers_outflow_rp(1))
-ALLOCATE(rivers_data%global_land_index(1))
-
-rivers_data%global_land_index(:) = imdi
 #endif
 
-rivers_data%tot_surf_runoff_gb(:) = 0.0
-rivers_data%tot_sub_runoff_gb(:)  = 0.0
-rivers_data%acc_lake_evap_gb(:,:)   = 0.0
+rivers_data%tot_surf_runoff_gb(:)           = 0.0
+rivers_data%tot_sub_runoff_gb(:)            = 0.0
+rivers_data%acc_lake_evap_gb(:,:)           = 0.0
 rivers_data%rivers_sto_per_m2_on_landpts(:) = 0.0
-rivers_data%rivers_adj_on_landpts(:) = 0.0
+rivers_data%rivers_adj_on_landpts(:)        = 0.0
+rivers_data%global_land_index(:)            = imdi
 
 IF (lhook) CALL dr_hook(ModuleName//':'//RoutineName,zhook_out,zhook_handle)
 RETURN
@@ -1339,9 +1375,9 @@ DEALLOCATE(rivers_data%tot_sub_runoff_gb)
 DEALLOCATE(rivers_data%acc_lake_evap_gb)
 DEALLOCATE(rivers_data%rivers_sto_per_m2_on_landpts)
 DEALLOCATE(rivers_data%rivers_adj_on_landpts)
+DEALLOCATE(rivers_data%global_land_index)
 #if defined(UM_JULES)
 DEALLOCATE(rivers_data%map_river_to_land_points)
-DEALLOCATE(rivers_data%global_land_index)
 DEALLOCATE(rivers_data%rfm_iarea_rp)
 DEALLOCATE(rivers_data%rfm_land_rp)
 DEALLOCATE(rivers_data%rivers_index_rp)
@@ -1405,10 +1441,7 @@ rivers%tot_sub_runoff_gb => rivers_data%tot_sub_runoff_gb
 rivers%acc_lake_evap_gb => rivers_data%acc_lake_evap_gb
 rivers%rivers_sto_per_m2_on_landpts => rivers_data%rivers_sto_per_m2_on_landpts
 rivers%rivers_adj_on_landpts => rivers_data%rivers_adj_on_landpts
-#if defined(UM_JULES)
 rivers%global_land_index => rivers_data%global_land_index
-#endif
-
 
 IF (lhook) CALL dr_hook(ModuleName//':'//RoutineName,zhook_out,zhook_handle)
 RETURN
@@ -1443,9 +1476,9 @@ NULLIFY(rivers%tot_sub_runoff_gb)
 NULLIFY(rivers%acc_lake_evap_gb)
 NULLIFY(rivers%rivers_sto_per_m2_on_landpts)
 NULLIFY(rivers%rivers_adj_on_landpts)
+NULLIFY(rivers%global_land_index)
 #if defined(UM_JULES)
 NULLIFY(rivers%map_river_to_land_points)
-NULLIFY(rivers%global_land_index)
 NULLIFY(rivers%rfm_iarea_rp)
 NULLIFY(rivers%rfm_land_rp)
 NULLIFY(rivers%rivers_index_rp)
@@ -1826,7 +1859,7 @@ error_sum = error_sum + ERROR
 IF ( error_sum /= 0 ) THEN
   errcode = 101
   CALL ereport( RoutineName, errcode,                                          &
-                "Error allocating for routing point arrays." )
+                "Error allocating river routing arrays - river point" )
 END IF
 
 !------------------------------------------------------------------------------

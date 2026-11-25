@@ -277,7 +277,8 @@ CALL ancil_info_alloc(land_pts,t_i_length,t_j_length,                          &
                       nice,nsoilt,ntype,                                       &
                       ainfo_data)
 
-CALL jules_rivers_alloc(land_pts, t_i_length, t_j_length, rivers_data)
+CALL jules_rivers_alloc(global_land_pts, land_pts, t_i_length,                 &
+                        t_j_length, rivers_data)
 
 CALL forcing_alloc(t_i_length,t_j_length, u_i_length, u_j_length,              &
                    v_i_length, v_j_length, forcing_data)
